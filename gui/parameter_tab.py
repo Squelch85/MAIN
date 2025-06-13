@@ -133,6 +133,7 @@ class ParameterTab(ttk.Frame):
             container, borderwidth=1, relief="solid", width=self.cell_width
         )
         parameter_frame.grid(row=row, column=column, padx=4, pady=4, sticky="nsew")
+ main
 
         ttk.Label(
             parameter_frame,
