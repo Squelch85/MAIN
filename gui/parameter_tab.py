@@ -196,8 +196,30 @@ class ParameterTab(ttk.Frame):
         interval = 1000 if file_size < 1024 * 10 else 2000
         current_hash = compute_file_hash(self.file_path)
         if current_hash != self.last_file_hash:
-            self.sections = load_parameters(self.file_path)
-            self.refresh_ui()
+            new_sections = load_parameters(self.file_path)
+
+            structure_changed = (
+                list(new_sections.keys()) != list(self.sections.keys())
+            )
+            if not structure_changed:
+                for sec in new_sections:
+                    if list(new_sections[sec].keys()) != list(
+                        self.sections.get(sec, {}).keys()
+                    ):
+                        structure_changed = True
+                        break
+
+            if structure_changed:
+                self.sections = new_sections
+                self.refresh_ui()
+            else:
+                for sec, params in new_sections.items():
+                    for param, value in params.items():
+                        if self.sections[sec][param] != value:
+                            self.sections[sec][param] = value
+                            self.update_parameter_widget(sec, param, value)
+                self.adjust_window_size()
+
             self.last_file_hash = current_hash
         self.after(interval, self.monitor_file_changes)
 
