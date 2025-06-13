@@ -99,7 +99,6 @@ class ParameterTab(ttk.Frame):
             header = ttk.Frame(outer)
             header.grid(row=0, column=0, sticky="ew")
             outer.columnconfigure(0, weight=1)
-            header.columnconfigure(1, weight=1)
 
             collapsed = self.section_states.get(section, False)
             toggle_btn = ttk.Button(
@@ -108,33 +107,29 @@ class ParameterTab(ttk.Frame):
                 width=2,
                 command=lambda s=section: self.toggle_section(s),
             )
-            toggle_btn.grid(row=0, column=0)
+            toggle_btn.pack(side="left")
 
-            ttk.Label(header, text=section, font=("Arial", 9, "bold")).grid(
-                row=0, column=1, sticky="w", padx=(4, 0)
+            up_btn = ttk.Button(
+                header, text="\u2191", width=2, command=lambda s=section: self.move_section_up(s)
+            )
+            up_btn.pack(side="left")
+
+            down_btn = ttk.Button(
+                header, text="\u2193", width=2, command=lambda s=section: self.move_section_down(s)
+            )
+            down_btn.pack(side="left")
+
+            ttk.Label(header, text=section, font=("Arial", 9, "bold")).pack(
+                side="left", padx=(4, 0), fill="x", expand=True
             )
 
 
             grid_frame = ttk.Frame(outer)
             grid_frame.grid(row=1, column=0, sticky="nsew")
 
-            button_frame = ttk.Frame(grid_frame)
-            button_frame.grid(row=0, column=self.grid_columns - 1, sticky="ne")
-
-            up_btn = ttk.Button(
-                button_frame, text="\u2191", width=2, command=lambda s=section: self.move_section_up(s)
-            )
-            up_btn.pack(side="top")
-
-            down_btn = ttk.Button(
-                button_frame, text="\u2193", width=2, command=lambda s=section: self.move_section_down(s)
-            )
-            down_btn.pack(side="top")
-
             self.widget_registry[section] = {
                 "frame": outer,
                 "grid_frame": grid_frame,
-                "button_frame": button_frame,
                 "params": {},
                 "toggle": toggle_btn,
             }
@@ -297,11 +292,8 @@ class ParameterTab(ttk.Frame):
     def layout_parameters(self):
         for section, info in self.widget_registry.items():
             container = info["grid_frame"]
-            button_frame = info.get("button_frame")
             for i in range(self.grid_columns):
                 container.columnconfigure(i, minsize=self.cell_width)
-            if button_frame:
-                button_frame.grid_configure(row=0, column=self.grid_columns - 1, sticky="ne")
             for index, param_name in enumerate(self.sections[section].keys()):
                 frame = info["params"][param_name][0]
                 row, column = divmod(index, self.grid_columns)
