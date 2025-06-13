@@ -41,9 +41,7 @@ class ParameterTab(ttk.Frame):
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # 탭 내부에서 마우스 휠 스크롤을 처리
-        self._wheel_bind_id = self.canvas.bind("<MouseWheel>", self._on_mousewheel)
-        self._btn4_bind_id = self.canvas.bind("<Button-4>", self._on_mousewheel)
-        self._btn5_bind_id = self.canvas.bind("<Button-5>", self._on_mousewheel)
+        # 각 탭이 활성화될 때 bind_mousewheel()을 호출해 전역 스크롤을 설정한다.
 
         # 창 크기 변화를 감지해 레이아웃을 재계산
         self._padding = 0
@@ -255,6 +253,18 @@ class ParameterTab(ttk.Frame):
         elif event.num == 5:
             self.canvas.yview_scroll(1, "units")
 
+    def bind_mousewheel(self):
+        """Enable scrolling with the mouse wheel for this tab."""
+        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel, add="+")
+        self.canvas.bind_all("<Button-4>", self._on_mousewheel, add="+")
+        self.canvas.bind_all("<Button-5>", self._on_mousewheel, add="+")
+
+    def unbind_mousewheel(self):
+        """Disable global mouse wheel bindings for this tab."""
+        self.canvas.unbind_all("<MouseWheel>")
+        self.canvas.unbind_all("<Button-4>")
+        self.canvas.unbind_all("<Button-5>")
+
     def on_resize(self, event):
         if not self.winfo_exists():
             return
@@ -334,12 +344,7 @@ class ParameterTab(ttk.Frame):
         toplevel = self.winfo_toplevel()
         if hasattr(self, "_resize_bind_id"):
             toplevel.unbind("<Configure>", self._resize_bind_id)
-        if hasattr(self, "_wheel_bind_id"):
-            self.canvas.unbind("<MouseWheel>", self._wheel_bind_id)
-        if hasattr(self, "_btn4_bind_id"):
-            self.canvas.unbind("<Button-4>", self._btn4_bind_id)
-        if hasattr(self, "_btn5_bind_id"):
-            self.canvas.unbind("<Button-5>", self._btn5_bind_id)
+        self.unbind_mousewheel()
         super().destroy()
 
 
