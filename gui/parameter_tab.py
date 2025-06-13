@@ -25,7 +25,15 @@ class ParameterTab(ttk.Frame):
             lambda e: self.adjust_window_size()
         )
 
-        self.canvas.create_window((0, 0), window=self.scrollable_content, anchor="nw")
+        # canvas에 올려질 프레임의 ID를 저장해 이후 사이즈 조정에 사용
+        self.canvas_window = self.canvas.create_window(
+            (0, 0), window=self.scrollable_content, anchor="nw"
+        )
+        # 캔버스 크기가 변하면 내부 프레임의 너비도 함께 조정
+        self.canvas.bind(
+            "<Configure>",
+            lambda e: self.canvas.itemconfigure(self.canvas_window, width=e.width),
+        )
         self.scrollable_content.columnconfigure(0, weight=1)
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -212,10 +220,14 @@ class ParameterTab(ttk.Frame):
 
         new_cols = max(1, (event.width - self._padding) // 120)
 
+        # 캔버스의 윈도우 폭을 현재 캔버스 폭에 맞춤
+        self.canvas.itemconfigure(self.canvas_window, width=self.canvas.winfo_width())
+
         if new_cols != self.grid_columns:
             self.grid_columns = new_cols
             self.layout_parameters()
-            self.adjust_window_size()
+
+        self.adjust_window_size()
 
     def layout_parameters(self):
         for section, info in self.widget_registry.items():
