@@ -5,13 +5,14 @@ from collections import OrderedDict
 from config_io import compute_file_hash, load_parameters, save_parameters
 
 class ParameterTab(ttk.Frame):
-    def __init__(self, master, file_path):
+    def __init__(self, master, file_path, initial_state=None):
         super().__init__(master)
         self.file_path = file_path
         self.sections = OrderedDict()
         self.last_file_hash = None
         self.widget_registry = {}
-        self.section_states = {}
+        self.section_states = (initial_state or {}).get("collapsed", {})
+        self._saved_order = (initial_state or {}).get("order")
         # initial column count; will adjust on resize
         self.grid_columns = 4
 
@@ -43,6 +44,15 @@ class ParameterTab(ttk.Frame):
     def load_parameters(self):
         self.last_file_hash = compute_file_hash(self.file_path)
         self.sections = load_parameters(self.file_path)
+        if self._saved_order:
+            ordered = OrderedDict()
+            for sec in self._saved_order:
+                if sec in self.sections:
+                    ordered[sec] = self.sections[sec]
+            for sec in self.sections:
+                if sec not in ordered:
+                    ordered[sec] = self.sections[sec]
+            self.sections = ordered
         self.max_label_len = max(
             (len(key) for params in self.sections.values() for key in params),
             default=0,
@@ -227,6 +237,7 @@ class ParameterTab(ttk.Frame):
             self.sections = OrderedDict((k, self.sections[k]) for k in keys)
             self.refresh_ui()
             self.adjust_window_size()
+            save_parameters(self.file_path, self.sections)
 
     def move_section_down(self, section):
         keys = list(self.sections.keys())
@@ -236,5 +247,13 @@ class ParameterTab(ttk.Frame):
             self.sections = OrderedDict((k, self.sections[k]) for k in keys)
             self.refresh_ui()
             self.adjust_window_size()
+            save_parameters(self.file_path, self.sections)
+
+    def get_state(self):
+        """Return collapsed state and section order for persistence."""
+        return {
+            "collapsed": self.section_states,
+            "order": list(self.sections.keys()),
+        }
 
 

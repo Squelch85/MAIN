@@ -27,8 +27,9 @@ python INI_EDIT.py
 ```
 
 Any INI files opened will be listed in a tabbed interface. When closing the
-program, the set of open files and window size are stored in `gui/state.json`
-and reloaded on the next start.
+program, the set of open files, window size and per-file UI state (collapsed
+sections and custom ordering) are stored in `gui/state.json` and reloaded on the
+next start so the interface appears exactly as you left it.
 
 ## Contributing
 - Follow [PEP 8](https://peps.python.org/pep-0008/) for code style.
