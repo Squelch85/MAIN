@@ -133,7 +133,6 @@ class ParameterTab(ttk.Frame):
             container, borderwidth=1, relief="solid", width=self.cell_width
         )
         parameter_frame.grid(row=row, column=column, padx=4, pady=4, sticky="nsew")
- main
 
         ttk.Label(
             parameter_frame,
@@ -224,9 +223,8 @@ class ParameterTab(ttk.Frame):
 
         new_cols = max(1, (event.width - self._padding) // self.cell_width)
 
-        # 캔버스의 윈도우 폭을 고정된 셀 폭에 맞춰 조정
-        desired_width = self.grid_columns * self.cell_width
-        self.canvas.itemconfigure(self.canvas_window, width=desired_width)
+        # 창 크기에 맞춰 내부 프레임 폭을 바로 반영
+        self.canvas.itemconfigure(self.canvas_window, width=event.width - self._padding)
 
         if new_cols != self.grid_columns:
             self.grid_columns = new_cols
