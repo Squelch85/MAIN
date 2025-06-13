@@ -7,7 +7,9 @@ from state_manager import load_state, save_state
 class ParameterManagerGUI:
     def __init__(self, root_window):
         self.root_window = root_window
-        self.state_path = os.path.join(os.path.dirname(__file__), "state.json")
+        # store window state in a user writable location
+        self.state_path = os.path.expanduser("~/.ini_editor/state.json")
+        os.makedirs(os.path.dirname(self.state_path), exist_ok=True)
         self.open_files = []
         self.saved_geometry = None
         self.file_states = {}

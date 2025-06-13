@@ -10,7 +10,7 @@
 
 ## 프로젝트 구조
 - `gui/parameter_tab.py` – 토글 버튼과 편집 필드를 갖춘 동적 섹션/파라미터 UI
-- `gui/parameter_manager.py` – 여러 파일 탭을 관리하고 `state_manager.py`를 사용해 창 상태를 `state.json`에 저장
+- `gui/parameter_manager.py` – 여러 파일 탭을 관리하고 `state_manager.py`를 사용해 창 상태를 사용자의 홈 디렉터리 아래 `.ini_editor/state.json`에 저장
 - `state_manager.py` – JSON 상태 파일을 불러오고 저장하는 헬퍼
 - `config_io.py` – INI 형식 파일을 읽고 쓰는 유틸리티
 - `INI_EDIT.py` – GUI를 실행하는 진입점
@@ -22,7 +22,7 @@
 python INI_EDIT.py
 ```
 
-열린 INI 파일들은 탭 인터페이스에 표시됩니다. 창을 닫을 때 열린 파일 목록, 창 크기, 섹션 접힘 상태 등이 `gui/state.json`에 기록되며 다음 실행 시 그대로 복원됩니다.
+열린 INI 파일들은 탭 인터페이스에 표시됩니다. 창을 닫을 때 열린 파일 목록, 창 크기, 섹션 접힘 상태 등이 사용자의 홈 디렉터리 아래 `.ini_editor/state.json`에 기록되며 다음 실행 시 그대로 복원됩니다. 읽기나 쓰기에 실패하면 경고 로그가 남습니다.
 
 메인 창 크기를 자유롭게 조절하면 즉시 적용되며 스냅 제한은 없습니다.
 

@@ -1,5 +1,8 @@
 import json
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def load_state(state_path):
@@ -19,8 +22,10 @@ def load_state(state_path):
                 saved_geometry = data.get("geometry")
                 open_files = data.get("files", [])
                 file_states = data.get("file_states", {})
-        except Exception:
-            pass
+        except json.JSONDecodeError as e:
+            logger.warning("Failed to parse state file %s: %s", state_path, e)
+        except OSError as e:
+            logger.warning("Failed to read state file %s: %s", state_path, e)
     return saved_geometry, open_files, file_states
 
 
@@ -28,7 +33,8 @@ def save_state(state_path, geometry, files, file_states):
     """GUI 상태를 JSON 파일로 저장합니다."""
     state = {"geometry": geometry, "files": files, "file_states": file_states}
     try:
+        os.makedirs(os.path.dirname(state_path), exist_ok=True)
         with open(state_path, "w", encoding="utf-8") as f:
             json.dump(state, f)
-    except Exception:
-        pass
+    except OSError as e:
+        logger.warning("Failed to write state file %s: %s", state_path, e)
