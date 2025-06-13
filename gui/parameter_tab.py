@@ -200,6 +200,13 @@ class ParameterTab(ttk.Frame):
 
     def on_resize(self, event):
         new_cols = max(1, event.width // 120)
+        toplevel = self.winfo_toplevel()
+        padding = toplevel.winfo_width() - self.winfo_width()
+        snap_width = new_cols * 120 + padding
+
+        if toplevel.winfo_width() != snap_width:
+            toplevel.geometry(f"{snap_width}x{toplevel.winfo_height()}")
+
         if new_cols != self.grid_columns:
             self.grid_columns = new_cols
             self.layout_parameters()
