@@ -29,6 +29,11 @@ class ParameterTab(ttk.Frame):
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
+        # enable mouse wheel scrolling on the canvas
+        self.canvas.bind("<MouseWheel>", self._on_mousewheel)
+        self.canvas.bind("<Button-4>", self._on_mousewheel)
+        self.canvas.bind("<Button-5>", self._on_mousewheel)
+
         # track size changes to recompute layout
         self.bind("<Configure>", self.on_resize)
 
@@ -173,9 +178,15 @@ class ParameterTab(ttk.Frame):
         self.update_idletasks()
         bbox = self.canvas.bbox("all")
         if bbox:
-            width = bbox[2] - bbox[0]
-            height = bbox[3] - bbox[1]
-            self.canvas.config(scrollregion=bbox, width=width, height=height)
+            self.canvas.config(scrollregion=bbox)
+
+    def _on_mousewheel(self, event):
+        if hasattr(event, 'delta') and event.delta:
+            self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        elif event.num == 4:
+            self.canvas.yview_scroll(-1, "units")
+        elif event.num == 5:
+            self.canvas.yview_scroll(1, "units")
 
     def on_resize(self, event):
         new_cols = max(1, event.width // 120)
