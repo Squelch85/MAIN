@@ -1,8 +1,8 @@
 import os
 import tkinter as tk
 from tkinter import ttk, filedialog
-import json
-from parameter_tab import ParameterTab
+from .parameter_tab import ParameterTab
+from state_manager import load_state, save_state
 
 class ParameterManagerGUI:
     def __init__(self, root_window):
@@ -10,7 +10,7 @@ class ParameterManagerGUI:
         self.state_path = os.path.join(os.path.dirname(__file__), "state.json")
         self.open_files = []
         self.saved_geometry = None
-        self.load_state()
+        self.saved_geometry, self.open_files = load_state(self.state_path)
 
         self.notebook = ttk.Notebook(self.root_window)
         self.notebook.pack(fill=tk.BOTH, expand=True)
@@ -37,27 +37,6 @@ class ParameterManagerGUI:
         menu_bar.add_cascade(label="File", menu=file_menu)
         self.root_window.config(menu=menu_bar)
 
-    def load_state(self):
-        if os.path.exists(self.state_path):
-            try:
-                with open(self.state_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    self.saved_geometry = data.get("geometry")
-                    self.open_files = data.get("files", [])
-            except Exception:
-                self.saved_geometry = None
-                self.open_files = []
-
-    def save_state(self):
-        state = {
-            "geometry": self.root_window.geometry(),
-            "files": list(self.tabs.keys()),
-        }
-        try:
-            with open(self.state_path, "w", encoding="utf-8") as f:
-                json.dump(state, f)
-        except Exception:
-            pass
 
     def open_files_dialog(self):
         file_paths = filedialog.askopenfilenames(
@@ -98,7 +77,7 @@ class ParameterManagerGUI:
                 self.open_files.remove(file_path)
 
     def on_close(self):
-        self.save_state()
+        save_state(self.state_path, self.root_window.geometry(), list(self.tabs.keys()))
         self.root_window.destroy()
 
     def _open_file(self, file_path):

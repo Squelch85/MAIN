@@ -1,8 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 import os
-import hashlib
 from collections import OrderedDict
+from config_io import compute_file_hash, load_parameters, save_parameters
 
 class ParameterTab(ttk.Frame):
     def __init__(self, master, file_path):
@@ -40,45 +40,16 @@ class ParameterTab(ttk.Frame):
 
         self.load_parameters()
 
-    def compute_file_hash(self):
-        if not self.file_path:
-            return None
-        try:
-            with open(self.file_path, "rb") as file:
-                return hashlib.md5(file.read()).hexdigest()
-        except FileNotFoundError:
-            return None
-
     def load_parameters(self):
-        self.last_file_hash = self.compute_file_hash()
-        self.load_parameters_from_file()
-        self.refresh_ui()
-        self.adjust_window_size()
-        self.after(100, self.monitor_file_changes)
-
-    def load_parameters_from_file(self):
-        if not self.file_path:
-            return
-        self.sections.clear()
-        current_section = "DEFAULT"
-        self.sections[current_section] = OrderedDict()
-        with open(self.file_path, "r", encoding="utf-8") as file:
-            for line in file:
-                line = line.strip()
-                if not line or line.startswith(("#", ";")):
-                    continue
-                if line.startswith("[") and line.endswith("]"):
-                    current_section = line[1:-1].strip()
-                    self.sections[current_section] = OrderedDict()
-                elif "=" in line:
-                    key, value = map(str.strip, line.split("=", 1))
-                    self.sections.setdefault(current_section, OrderedDict())[key] = value
-
-        # placeholder for potential width calculations
+        self.last_file_hash = compute_file_hash(self.file_path)
+        self.sections = load_parameters(self.file_path)
         self.max_label_len = max(
             (len(key) for params in self.sections.values() for key in params),
             default=0,
         )
+        self.refresh_ui()
+        self.adjust_window_size()
+        self.after(100, self.monitor_file_changes)
 
     def refresh_ui(self):
         for widget in self.scrollable_content.winfo_children():
@@ -184,32 +155,21 @@ class ParameterTab(ttk.Frame):
         current = self.sections[section][param_name]
         self.sections[section][param_name] = "0" if current == "1" else "1"
         self.update_parameter_widget(section, param_name, self.sections[section][param_name])
-        self.save_parameters_to_file()
+        save_parameters(self.file_path, self.sections)
 
     def update_parameter_value(self, section, param_name, param_value):
         self.sections[section][param_name] = param_value
         self.update_parameter_widget(section, param_name, param_value)
-        self.save_parameters_to_file()
-
-    def save_parameters_to_file(self):
-        if not self.file_path:
-            return
-        with open(self.file_path, "w", encoding="utf-8") as file:
-            for section, params in self.sections.items():
-                if section != "DEFAULT":
-                    file.write(f"[{section}]\n")
-                for key, value in params.items():
-                    file.write(f"{key}={value}\n")
-                file.write("\n")
+        save_parameters(self.file_path, self.sections)
 
     def monitor_file_changes(self):
         if not self.file_path:
             return
         file_size = os.path.getsize(self.file_path)
         interval = 1000 if file_size < 1024 * 10 else 2000
-        current_hash = self.compute_file_hash()
+        current_hash = compute_file_hash(self.file_path)
         if current_hash != self.last_file_hash:
-            self.load_parameters_from_file()
+            self.sections = load_parameters(self.file_path)
             self.refresh_ui()
             self.last_file_hash = current_hash
         self.after(interval, self.monitor_file_changes)

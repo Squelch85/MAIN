@@ -1,5 +1,5 @@
 import tkinter as tk
-from parameter_manager import ParameterManagerGUI
+from gui.parameter_manager import ParameterManagerGUI
 
 if __name__ == "__main__":
     app_root = tk.Tk()
