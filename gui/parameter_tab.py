@@ -52,6 +52,22 @@ class ParameterTab(ttk.Frame):
 
         self.load_parameters()
 
+    def update_layout_for_current_size(self):
+        """Recalculate grid layout using the current toplevel size."""
+        if not self.winfo_exists():
+            return
+        toplevel = self.winfo_toplevel()
+        self.update_idletasks()
+        self._padding = toplevel.winfo_width() - self.winfo_width()
+        self._padding_initialized = True
+        width = toplevel.winfo_width()
+        new_cols = max(1, (width - self._padding) // self.cell_width)
+        self.canvas.itemconfigure(self.canvas_window, width=width - self._padding)
+        if new_cols != self.grid_columns:
+            self.grid_columns = new_cols
+            self.layout_parameters()
+        self.adjust_window_size()
+
     def load_parameters(self):
         self.last_file_hash = compute_file_hash(self.file_path)
         self.sections = load_parameters(self.file_path)
