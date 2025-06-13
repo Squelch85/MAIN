@@ -16,6 +16,7 @@ class ParameterManagerGUI:
         self.notebook = ttk.Notebook(self.root_window)
         self.notebook.pack(fill=tk.BOTH, expand=True)
         self.notebook.bind("<Button-3>", self.show_tab_menu)
+        self.notebook.bind("<<NotebookTabChanged>>", self.on_tab_changed)
 
         self.tab_menu = tk.Menu(self.notebook, tearoff=0)
         self.tab_menu.add_command(label="Close", command=self.close_current_tab)
@@ -93,7 +94,14 @@ class ParameterManagerGUI:
         tab = ParameterTab(self.notebook, file_path, initial_state=tab_state)
         self.notebook.add(tab, text=os.path.basename(file_path))
         self.tabs[file_path] = tab
-        tab.adjust_window_size()
+        self.notebook.select(tab)
+        tab.update_layout_for_current_size()
         if file_path not in self.open_files:
             self.open_files.append(file_path)
+
+    def on_tab_changed(self, event):
+        tab_id = self.notebook.select()
+        tab = self.notebook.nametowidget(tab_id)
+        if hasattr(tab, "update_layout_for_current_size"):
+            tab.update_layout_for_current_size()
 
