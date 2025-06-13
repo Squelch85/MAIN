@@ -10,7 +10,8 @@ class ParameterManagerGUI:
         self.state_path = os.path.join(os.path.dirname(__file__), "state.json")
         self.open_files = []
         self.saved_geometry = None
-        self.saved_geometry, self.open_files = load_state(self.state_path)
+        self.file_states = {}
+        self.saved_geometry, self.open_files, self.file_states = load_state(self.state_path)
 
         self.notebook = ttk.Notebook(self.root_window)
         self.notebook.pack(fill=tk.BOTH, expand=True)
@@ -77,11 +78,19 @@ class ParameterManagerGUI:
                 self.open_files.remove(file_path)
 
     def on_close(self):
-        save_state(self.state_path, self.root_window.geometry(), list(self.tabs.keys()))
+        for path, tab in self.tabs.items():
+            self.file_states[path] = tab.get_state()
+        save_state(
+            self.state_path,
+            self.root_window.geometry(),
+            list(self.tabs.keys()),
+            self.file_states,
+        )
         self.root_window.destroy()
 
     def _open_file(self, file_path):
-        tab = ParameterTab(self.notebook, file_path)
+        tab_state = self.file_states.get(file_path)
+        tab = ParameterTab(self.notebook, file_path, initial_state=tab_state)
         self.notebook.add(tab, text=os.path.basename(file_path))
         self.tabs[file_path] = tab
         tab.adjust_window_size()
