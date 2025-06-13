@@ -37,7 +37,9 @@ class ParameterTab(ttk.Frame):
         self.bind_all("<Button-5>", self._on_mousewheel)
 
         # track size changes to recompute layout
-        self.bind("<Configure>", self.on_resize)
+        self._snap_initialized = False
+        self._last_snapped_width = None
+        self.winfo_toplevel().bind("<Configure>", self.on_resize)
 
         self.load_parameters()
 
@@ -199,7 +201,28 @@ class ParameterTab(ttk.Frame):
             self.canvas.yview_scroll(1, "units")
 
     def on_resize(self, event):
-        new_cols = max(1, event.width // 120)
+        toplevel = self.winfo_toplevel()
+
+        if event.widget is not toplevel:
+            return
+
+        if not self._snap_initialized:
+            self._snap_initialized = True
+            self._last_snapped_width = toplevel.winfo_width()
+            return
+
+        if self._last_snapped_width == event.width:
+            self._last_snapped_width = None
+            return
+
+        new_cols = max(1, self.winfo_width() // 120)
+        padding = toplevel.winfo_width() - self.winfo_width()
+        snap_width = new_cols * 120 + padding
+
+        if snap_width != event.width:
+            self._last_snapped_width = snap_width
+            toplevel.geometry(f"{snap_width}x{toplevel.winfo_height()}")
+
         if new_cols != self.grid_columns:
             self.grid_columns = new_cols
             self.layout_parameters()
