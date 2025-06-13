@@ -233,13 +233,6 @@ class ParameterTab(ttk.Frame):
             self.grid_columns = new_cols
             self.layout_parameters()
             self.adjust_window_size()
- main
-            toplevel.geometry(f"{snap_width}x{toplevel.winfo_height()}")
-
-        if new_cols != self.grid_columns:
-            self.grid_columns = new_cols
-            self.layout_parameters()
-            self.adjust_window_size()
 
     def layout_parameters(self):
         for section, info in self.widget_registry.items():
