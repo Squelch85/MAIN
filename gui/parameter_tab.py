@@ -13,7 +13,7 @@ class ParameterTab(ttk.Frame):
         self.widget_registry = {}
         self.section_states = (initial_state or {}).get("collapsed", {})
         self._saved_order = (initial_state or {}).get("order")
-        # initial column count; will adjust on resize
+        # 초기 열 개수, 창 크기에 맞춰 조정됩니다
         self.grid_columns = 4
 
         self.canvas = tk.Canvas(self)
@@ -31,12 +31,12 @@ class ParameterTab(ttk.Frame):
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # enable mouse wheel scrolling anywhere inside the tab
+        # 탭 내부 어디서나 마우스 휠 스크롤을 허용
         self.bind_all("<MouseWheel>", self._on_mousewheel)
         self.bind_all("<Button-4>", self._on_mousewheel)
         self.bind_all("<Button-5>", self._on_mousewheel)
 
-        # track size changes to recompute layout
+        # 창 크기 변화를 감지해 레이아웃을 재계산
         self._snap_initialized = False
         self._last_snapped_width = None
         self._padding = 0
@@ -63,8 +63,6 @@ class ParameterTab(ttk.Frame):
         self.refresh_ui()
         self.adjust_window_size()
         self.after(100, self.monitor_file_changes)
-
- main
 
     def refresh_ui(self):
         for widget in self.scrollable_content.winfo_children():
@@ -203,7 +201,6 @@ class ParameterTab(ttk.Frame):
         elif event.num == 5:
             self.canvas.yview_scroll(1, "units")
 
- n30yli-codex/modify-window-resizing-to-snap-to-columns
     def on_resize(self, event):
         toplevel = self.winfo_toplevel()
 
@@ -230,7 +227,6 @@ class ParameterTab(ttk.Frame):
             self.grid_columns = new_cols
             self.layout_parameters()
             self.adjust_window_size()
- main
 
         # 2) 최초 이벤트는 스냅 초기화만 수행
         if not self._snap_initialized:
@@ -305,7 +301,7 @@ class ParameterTab(ttk.Frame):
             save_parameters(self.file_path, self.sections)
 
     def get_state(self):
-        """Return collapsed state and section order for persistence."""
+        """섹션 접힘 상태와 순서를 저장하기 위한 딕셔너리를 반환합니다."""
         return {
             "collapsed": self.section_states,
             "order": list(self.sections.keys()),

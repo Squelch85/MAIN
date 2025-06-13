@@ -3,11 +3,11 @@ import os
 
 
 def load_state(state_path):
-    """Load GUI state from JSON file.
+    """JSON 파일에서 GUI 상태를 읽어옵니다.
 
-    Returns a tuple ``(geometry, files, file_states)`` where ``file_states``
-    holds any per-file UI information saved by the GUI. ``file_states`` will be
-    an empty dictionary if no state file exists or it does not contain that key.
+    반환 값은 ``(geometry, files, file_states)`` 튜플이며,
+    ``file_states``에는 각 파일별 UI 정보가 저장됩니다.
+    상태 파일이 없거나 해당 키가 없으면 ``file_states`` 는 빈 딕셔너리를 돌려줍니다.
     """
     saved_geometry = None
     open_files = []
@@ -25,7 +25,7 @@ def load_state(state_path):
 
 
 def save_state(state_path, geometry, files, file_states):
-    """Save GUI state to JSON file."""
+    """GUI 상태를 JSON 파일로 저장합니다."""
     state = {"geometry": geometry, "files": files, "file_states": file_states}
     try:
         with open(state_path, "w", encoding="utf-8") as f:
