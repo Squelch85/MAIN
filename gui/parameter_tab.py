@@ -132,12 +132,14 @@ class ParameterTab(ttk.Frame):
         parameter_frame = ttk.Frame(
             container, borderwidth=1, relief="solid", width=self.cell_width
         )
-        parameter_frame.grid(row=row, column=column, padx=4, pady=4, sticky="nsew")
+        # 셀 간 간격을 좁히기 위해 padding 값을 조정
+        parameter_frame.grid(row=row, column=column, padx=2, pady=2, sticky="nsew")
 
+        # 파라미터 텍스트 크기를 키워 가독성을 높임
         ttk.Label(
             parameter_frame,
             text=param_name,
-            font=("Arial", 8, "bold"),
+            font=("Arial", 10, "bold"),
             anchor=tk.W,
         ).grid(row=0, column=0, columnspan=2, sticky=tk.W)
 
@@ -146,7 +148,7 @@ class ParameterTab(ttk.Frame):
             text="ON" if param_value == "1" else "OFF",
             bg="green" if param_value == "1" else "red",
             fg="white",
-            font=("Arial", 8, "bold"),
+            font=("Arial", 10, "bold"),
             width=4,
             command=lambda: self.toggle_parameter_value(section, param_name),
         )
@@ -168,7 +170,7 @@ class ParameterTab(ttk.Frame):
             text="ON" if param_value == "1" else "OFF",
             bg="green" if param_value == "1" else "red",
             fg="white",
-            font=("Arial", 8, "bold"),
+            font=("Arial", 10, "bold"),
             width=4,
         )
         value_entry.delete(0, tk.END)
