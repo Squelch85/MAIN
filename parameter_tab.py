@@ -188,7 +188,7 @@ class ParameterTab(ttk.Frame):
         for section, info in self.widget_registry.items():
             section_frame = info["frame"]
             for i in range(self.grid_columns):
-                section_frame.columnconfigure(i, weight=1)
+                section_frame.columnconfigure(i, weight=1, uniform="param_cols")
             for index, param_name in enumerate(self.sections[section].keys()):
                 frame = info["params"][param_name][0]
                 row, column = divmod(index, self.grid_columns)
