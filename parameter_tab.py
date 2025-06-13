@@ -68,6 +68,12 @@ class ParameterTab(ttk.Frame):
                     key, value = map(str.strip, line.split("=", 1))
                     self.sections.setdefault(current_section, OrderedDict())[key] = value
 
+        # determine the widest parameter name for consistent label width
+        self.max_label_len = max(
+            (len(key) for params in self.sections.values() for key in params),
+            default=0,
+        )
+
     def refresh_ui(self):
         for widget in self.scrollable_content.winfo_children():
             widget.destroy()
@@ -88,9 +94,13 @@ class ParameterTab(ttk.Frame):
         parameter_frame = ttk.Frame(section_info["frame"], borderwidth=1, relief="solid")
         parameter_frame.grid(row=row, column=column, padx=4, pady=4, sticky="nsew")
 
-        ttk.Label(parameter_frame, text=param_name, font=("Arial", 8, "bold")).grid(
-            row=0, column=0, columnspan=2, sticky=tk.W
-        )
+        ttk.Label(
+            parameter_frame,
+            text=param_name,
+            font=("Arial", 8, "bold"),
+            width=max(self.max_label_len, 1),
+            anchor=tk.W,
+        ).grid(row=0, column=0, columnspan=2, sticky=tk.W)
 
         toggle_button = tk.Button(
             parameter_frame,
