@@ -48,7 +48,9 @@ class ParameterTab(ttk.Frame):
         # 창 크기 변화를 감지해 레이아웃을 재계산
         self._padding = 0
         self._padding_initialized = False
-        self._resize_bind_id = self.winfo_toplevel().bind("<Configure>", self.on_resize)
+        self._resize_bind_id = self.winfo_toplevel().bind(
+            "<Configure>", self.on_resize, add="+"
+        )
 
         self.load_parameters()
 
