@@ -39,6 +39,7 @@ class ParameterTab(ttk.Frame):
         # track size changes to recompute layout
         self._snap_initialized = False
         self._last_snapped_width = None
+        self._padding = 0
         self.winfo_toplevel().bind("<Configure>", self.on_resize)
 
         self.load_parameters()
@@ -62,6 +63,8 @@ class ParameterTab(ttk.Frame):
         self.refresh_ui()
         self.adjust_window_size()
         self.after(100, self.monitor_file_changes)
+
+ main
 
     def refresh_ui(self):
         for widget in self.scrollable_content.winfo_children():
@@ -200,11 +203,34 @@ class ParameterTab(ttk.Frame):
         elif event.num == 5:
             self.canvas.yview_scroll(1, "units")
 
+ n30yli-codex/modify-window-resizing-to-snap-to-columns
     def on_resize(self, event):
-        # 1) 오직 최상위 윈도우 리사이즈에만 반응
         toplevel = self.winfo_toplevel()
+
         if event.widget is not toplevel:
             return
+
+        if not self._snap_initialized:
+            self._snap_initialized = True
+            self._padding = event.width - self.winfo_width()
+            return
+
+        if self._last_snapped_width == event.width:
+            self._last_snapped_width = None
+            return
+
+        new_cols = max(1, (event.width - self._padding) // 120)
+        snap_width = new_cols * 120 + self._padding
+
+        if snap_width != event.width:
+            self._last_snapped_width = snap_width
+            toplevel.geometry(f"{snap_width}x{toplevel.winfo_height()}")
+
+        if new_cols != self.grid_columns:
+            self.grid_columns = new_cols
+            self.layout_parameters()
+            self.adjust_window_size()
+ main
 
         # 2) 최초 이벤트는 스냅 초기화만 수행
         if not self._snap_initialized:
