@@ -181,11 +181,13 @@ class ParameterTab(ttk.Frame):
         self.sections[section][param_name] = "0" if current == "1" else "1"
         self.update_parameter_widget(section, param_name, self.sections[section][param_name])
         save_parameters(self.file_path, self.sections)
+        self.last_file_hash = compute_file_hash(self.file_path)
 
     def update_parameter_value(self, section, param_name, param_value):
         self.sections[section][param_name] = param_value
         self.update_parameter_widget(section, param_name, param_value)
         save_parameters(self.file_path, self.sections)
+        self.last_file_hash = compute_file_hash(self.file_path)
 
     def monitor_file_changes(self):
         if not self.file_path:
