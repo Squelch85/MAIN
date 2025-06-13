@@ -14,7 +14,8 @@ class ParameterTab(ttk.Frame):
         self.section_states = (initial_state or {}).get("collapsed", {})
         self._saved_order = (initial_state or {}).get("order")
         # 셀의 고정 폭과 초기 열 개수
-        self.cell_width = 120
+        # 기존 폭(120)에서 약 15% 줄여 UI 공간 활용도를 높인다
+        self.cell_width = int(120 * 0.85)
         self.grid_columns = 4
 
         self.canvas = tk.Canvas(self)
