@@ -11,6 +11,7 @@ class ParameterTab(ttk.Frame):
         self.sections = OrderedDict()
         self.last_file_hash = None
         self.widget_registry = {}
+        self.section_states = {}
         # initial column count; will adjust on resize
         self.grid_columns = 4
 
@@ -29,10 +30,10 @@ class ParameterTab(ttk.Frame):
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # enable mouse wheel scrolling on the canvas
-        self.canvas.bind("<MouseWheel>", self._on_mousewheel)
-        self.canvas.bind("<Button-4>", self._on_mousewheel)
-        self.canvas.bind("<Button-5>", self._on_mousewheel)
+        # enable mouse wheel scrolling anywhere inside the tab
+        self.bind_all("<MouseWheel>", self._on_mousewheel)
+        self.bind_all("<Button-4>", self._on_mousewheel)
+        self.bind_all("<Button-5>", self._on_mousewheel)
 
         # track size changes to recompute layout
         self.bind("<Configure>", self.on_resize)
@@ -73,7 +74,7 @@ class ParameterTab(ttk.Frame):
                     key, value = map(str.strip, line.split("=", 1))
                     self.sections.setdefault(current_section, OrderedDict())[key] = value
 
-        # determine the widest parameter name for consistent label width
+        # placeholder for potential width calculations
         self.max_label_len = max(
             (len(key) for params in self.sections.values() for key in params),
             default=0,
@@ -85,9 +86,48 @@ class ParameterTab(ttk.Frame):
         self.widget_registry.clear()
 
         for sec_index, (section, params) in enumerate(self.sections.items()):
-            section_frame = ttk.LabelFrame(self.scrollable_content, text=section)
-            section_frame.grid(row=sec_index, column=0, sticky="nsew", padx=5, pady=5)
-            self.widget_registry[section] = {"frame": section_frame, "params": {}}
+            outer = ttk.Frame(self.scrollable_content, borderwidth=2, relief="groove")
+            outer.grid(row=sec_index, column=0, sticky="nsew", padx=5, pady=5)
+            header = ttk.Frame(outer)
+            header.grid(row=0, column=0, sticky="ew")
+            outer.columnconfigure(0, weight=1)
+            header.columnconfigure(1, weight=1)
+
+            collapsed = self.section_states.get(section, False)
+            toggle_btn = ttk.Button(
+                header,
+                text="+" if collapsed else "-",
+                width=2,
+                command=lambda s=section: self.toggle_section(s),
+            )
+            toggle_btn.grid(row=0, column=0)
+
+            ttk.Label(header, text=section, font=("Arial", 9, "bold")).grid(
+                row=0, column=1, sticky="w", padx=(4, 0)
+            )
+
+            up_btn = ttk.Button(
+                header, text="\u2191", width=2, command=lambda s=section: self.move_section_up(s)
+            )
+            up_btn.grid(row=0, column=2, padx=(4, 0))
+
+            down_btn = ttk.Button(
+                header, text="\u2193", width=2, command=lambda s=section: self.move_section_down(s)
+            )
+            down_btn.grid(row=0, column=3, padx=(2, 0))
+
+            params_frame = ttk.Frame(outer)
+            params_frame.grid(row=1, column=0, sticky="nsew")
+
+            self.widget_registry[section] = {
+                "frame": outer,
+                "params_frame": params_frame,
+                "params": {},
+                "toggle": toggle_btn,
+            }
+
+            if collapsed:
+                params_frame.grid_remove()
 
             for index, (param_name, param_value) in enumerate(params.items()):
                 self.create_parameter_widget(section, index, param_name, param_value)
@@ -96,14 +136,14 @@ class ParameterTab(ttk.Frame):
     def create_parameter_widget(self, section, index, param_name, param_value):
         section_info = self.widget_registry[section]
         row, column = divmod(index, self.grid_columns)
-        parameter_frame = ttk.Frame(section_info["frame"], borderwidth=1, relief="solid")
+        container = section_info["params_frame"]
+        parameter_frame = ttk.Frame(container, borderwidth=1, relief="solid")
         parameter_frame.grid(row=row, column=column, padx=4, pady=4, sticky="nsew")
 
         ttk.Label(
             parameter_frame,
             text=param_name,
             font=("Arial", 8, "bold"),
-            width=max(self.max_label_len, 1),
             anchor=tk.W,
         ).grid(row=0, column=0, columnspan=2, sticky=tk.W)
 
@@ -197,12 +237,44 @@ class ParameterTab(ttk.Frame):
 
     def layout_parameters(self):
         for section, info in self.widget_registry.items():
-            section_frame = info["frame"]
+            container = info["params_frame"]
             for i in range(self.grid_columns):
-                section_frame.columnconfigure(i, weight=1, uniform="param_cols")
+                container.columnconfigure(i, weight=1, uniform="param_cols")
             for index, param_name in enumerate(self.sections[section].keys()):
                 frame = info["params"][param_name][0]
                 row, column = divmod(index, self.grid_columns)
                 frame.grid_configure(row=row, column=column, sticky="nsew")
+
+    def toggle_section(self, section):
+        info = self.widget_registry.get(section)
+        if not info:
+            return
+        collapsed = self.section_states.get(section, False)
+        if collapsed:
+            info["params_frame"].grid()
+            info["toggle"].config(text="-")
+        else:
+            info["params_frame"].grid_remove()
+            info["toggle"].config(text="+")
+        self.section_states[section] = not collapsed
+        self.adjust_window_size()
+
+    def move_section_up(self, section):
+        keys = list(self.sections.keys())
+        idx = keys.index(section)
+        if idx > 0:
+            keys[idx - 1], keys[idx] = keys[idx], keys[idx - 1]
+            self.sections = OrderedDict((k, self.sections[k]) for k in keys)
+            self.refresh_ui()
+            self.adjust_window_size()
+
+    def move_section_down(self, section):
+        keys = list(self.sections.keys())
+        idx = keys.index(section)
+        if idx < len(keys) - 1:
+            keys[idx + 1], keys[idx] = keys[idx], keys[idx + 1]
+            self.sections = OrderedDict((k, self.sections[k]) for k in keys)
+            self.refresh_ui()
+            self.adjust_window_size()
 
 
