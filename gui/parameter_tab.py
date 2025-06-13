@@ -13,7 +13,8 @@ class ParameterTab(ttk.Frame):
         self.widget_registry = {}
         self.section_states = (initial_state or {}).get("collapsed", {})
         self._saved_order = (initial_state or {}).get("order")
-        # 초기 열 개수, 창 크기에 맞춰 조정됩니다
+        # 셀의 고정 폭과 초기 열 개수
+        self.cell_width = 120
         self.grid_columns = 4
 
         self.canvas = tk.Canvas(self)
@@ -128,7 +129,9 @@ class ParameterTab(ttk.Frame):
         section_info = self.widget_registry[section]
         row, column = divmod(index, self.grid_columns)
         container = section_info["grid_frame"]
-        parameter_frame = ttk.Frame(container, borderwidth=1, relief="solid")
+        parameter_frame = ttk.Frame(
+            container, borderwidth=1, relief="solid", width=self.cell_width
+        )
         parameter_frame.grid(row=row, column=column, padx=4, pady=4, sticky="nsew")
 
         ttk.Label(
@@ -218,10 +221,11 @@ class ParameterTab(ttk.Frame):
             self._padding = event.width - self.winfo_width()
             self._padding_initialized = True
 
-        new_cols = max(1, (event.width - self._padding) // 120)
+        new_cols = max(1, (event.width - self._padding) // self.cell_width)
 
-        # 캔버스의 윈도우 폭을 현재 캔버스 폭에 맞춤
-        self.canvas.itemconfigure(self.canvas_window, width=self.canvas.winfo_width())
+        # 캔버스의 윈도우 폭을 고정된 셀 폭에 맞춰 조정
+        desired_width = self.grid_columns * self.cell_width
+        self.canvas.itemconfigure(self.canvas_window, width=desired_width)
 
         if new_cols != self.grid_columns:
             self.grid_columns = new_cols
@@ -233,11 +237,11 @@ class ParameterTab(ttk.Frame):
         for section, info in self.widget_registry.items():
             container = info["grid_frame"]
             for i in range(self.grid_columns):
-                container.columnconfigure(i, weight=1, uniform="param_cols")
+                container.columnconfigure(i, minsize=self.cell_width)
             for index, param_name in enumerate(self.sections[section].keys()):
                 frame = info["params"][param_name][0]
                 row, column = divmod(index, self.grid_columns)
-                frame.grid_configure(row=row, column=column, sticky="nsew")
+                frame.grid_configure(row=row, column=column, sticky="nw")
 
     def toggle_section(self, section):
         info = self.widget_registry.get(section)
