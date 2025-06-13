@@ -13,7 +13,7 @@ class ParameterTab(ttk.Frame):
         self.widget_registry = {}
         self.section_states = (initial_state or {}).get("collapsed", {})
         self._saved_order = (initial_state or {}).get("order")
-        # initial column count; will adjust on resize
+        # 초기 열 수; 창 크기에 따라 조정됨
         self.grid_columns = 4
 
         self.canvas = tk.Canvas(self)
@@ -31,12 +31,12 @@ class ParameterTab(ttk.Frame):
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # enable mouse wheel scrolling anywhere inside the tab
+        # 탭 내부 어디서나 마우스 휠 스크롤을 가능하게 함
         self.bind_all("<MouseWheel>", self._on_mousewheel)
         self.bind_all("<Button-4>", self._on_mousewheel)
         self.bind_all("<Button-5>", self._on_mousewheel)
 
-        # track size changes to recompute layout
+        # 크기 변화를 감지하여 레이아웃을 다시 계산
         self.bind("<Configure>", self.on_resize)
 
         self.load_parameters()
@@ -250,7 +250,7 @@ class ParameterTab(ttk.Frame):
             save_parameters(self.file_path, self.sections)
 
     def get_state(self):
-        """Return collapsed state and section order for persistence."""
+        """접힌 상태와 섹션 순서를 반환하여 저장에 사용한다."""
         return {
             "collapsed": self.section_states,
             "order": list(self.sections.keys()),

@@ -3,7 +3,7 @@ from collections import OrderedDict
 
 
 def compute_file_hash(filepath):
-    """Return md5 hash of file content or None if file does not exist."""
+    """파일이 존재하면 내용의 md5 해시를, 없으면 ``None`` 을 반환한다."""
     if not filepath:
         return None
     try:
@@ -14,7 +14,7 @@ def compute_file_hash(filepath):
 
 
 def load_parameters(filepath):
-    """Load parameters from INI-like file into an OrderedDict sections structure."""
+    """INI 형식 파일에서 파라미터를 읽어 OrderedDict 섹션 구조로 반환한다."""
     sections = OrderedDict()
     if not filepath:
         return sections
@@ -35,7 +35,7 @@ def load_parameters(filepath):
 
 
 def save_parameters(filepath, sections):
-    """Save parameters sections structure back to an INI-like file."""
+    """파라미터 섹션 구조를 INI 형식 파일에 저장한다."""
     if not filepath:
         return
     with open(filepath, "w", encoding="utf-8") as file:
