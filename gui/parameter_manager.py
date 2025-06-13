@@ -24,6 +24,7 @@ class ParameterManagerGUI:
         self.tab_menu.add_command(label="Close", command=self.close_current_tab)
 
         self.tabs = {}
+        self.current_tab = None
         self.initialize_menu()
 
         if self.saved_geometry:
@@ -32,6 +33,16 @@ class ParameterManagerGUI:
             if os.path.exists(f):
                 self._open_file(f)
         self.root_window.protocol("WM_DELETE_WINDOW", self.on_close)
+
+    def switch_active_tab(self, new_tab):
+        """Manage global mouse wheel bindings when the active tab changes."""
+        if self.current_tab is new_tab:
+            return
+        if self.current_tab and hasattr(self.current_tab, "unbind_mousewheel"):
+            self.current_tab.unbind_mousewheel()
+        self.current_tab = new_tab
+        if self.current_tab and hasattr(self.current_tab, "bind_mousewheel"):
+            self.current_tab.bind_mousewheel()
 
     def initialize_menu(self):
         menu_bar = tk.Menu(self.root_window)
@@ -72,6 +83,8 @@ class ParameterManagerGUI:
                 file_path = path
                 break
 
+        if tab == self.current_tab:
+            self.switch_active_tab(None)
         self.notebook.forget(index)
         tab.destroy()
 
@@ -89,6 +102,7 @@ class ParameterManagerGUI:
             list(self.tabs.keys()),
             self.file_states,
         )
+        self.switch_active_tab(None)
         self.root_window.destroy()
 
     def _open_file(self, file_path):
@@ -98,12 +112,14 @@ class ParameterManagerGUI:
         self.tabs[file_path] = tab
         self.notebook.select(tab)
         tab.update_layout_for_current_size()
+        self.switch_active_tab(tab)
         if file_path not in self.open_files:
             self.open_files.append(file_path)
 
     def on_tab_changed(self, event):
         tab_id = self.notebook.select()
         tab = self.notebook.nametowidget(tab_id)
+        self.switch_active_tab(tab)
         if hasattr(tab, "update_layout_for_current_size"):
             tab.update_layout_for_current_size()
 
