@@ -41,14 +41,14 @@ class ParameterTab(ttk.Frame):
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # 탭 내부 어디서나 마우스 휠 스크롤을 허용
-        self.bind_all("<MouseWheel>", self._on_mousewheel)
-        self.bind_all("<Button-4>", self._on_mousewheel)
-        self.bind_all("<Button-5>", self._on_mousewheel)
+        self._wheel_bind_id = self.bind_all("<MouseWheel>", self._on_mousewheel)
+        self._btn4_bind_id = self.bind_all("<Button-4>", self._on_mousewheel)
+        self._btn5_bind_id = self.bind_all("<Button-5>", self._on_mousewheel)
 
         # 창 크기 변화를 감지해 레이아웃을 재계산
         self._padding = 0
         self._padding_initialized = False
-        self.winfo_toplevel().bind("<Configure>", self.on_resize)
+        self._resize_bind_id = self.winfo_toplevel().bind("<Configure>", self.on_resize)
 
         self.load_parameters()
 
@@ -238,6 +238,8 @@ class ParameterTab(ttk.Frame):
             self.canvas.yview_scroll(1, "units")
 
     def on_resize(self, event):
+        if not self.winfo_exists():
+            return
         toplevel = self.winfo_toplevel()
 
         if event.widget is not toplevel:
@@ -308,5 +310,15 @@ class ParameterTab(ttk.Frame):
             "collapsed": self.section_states,
             "order": list(self.sections.keys()),
         }
+
+    def destroy(self):
+        """Remove event bindings and destroy the tab."""
+        toplevel = self.winfo_toplevel()
+        if hasattr(self, "_resize_bind_id"):
+            toplevel.unbind("<Configure>", self._resize_bind_id)
+        self.unbind_all("<MouseWheel>")
+        self.unbind_all("<Button-4>")
+        self.unbind_all("<Button-5>")
+        super().destroy()
 
 
