@@ -133,8 +133,6 @@ class ParameterTab(ttk.Frame):
             container, borderwidth=1, relief="solid", width=self.cell_width
         )
         parameter_frame.grid(row=row, column=column, padx=4, pady=4, sticky="nsew")
-        # 고정 폭을 유지하기 위해 그리드 크기 조정 비활성화
-        parameter_frame.grid_propagate(False)
 
         ttk.Label(
             parameter_frame,
