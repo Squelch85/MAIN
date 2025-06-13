@@ -87,11 +87,15 @@ class ParameterManagerGUI:
         for path, t in list(self.tabs.items()):
             if t == tab:
                 file_path = path
-                del self.tabs[path]
                 break
+
         self.notebook.forget(index)
-        if file_path in self.open_files:
-            self.open_files.remove(file_path)
+        tab.destroy()
+
+        if file_path:
+            self.tabs.pop(file_path, None)
+            if file_path in self.open_files:
+                self.open_files.remove(file_path)
 
     def on_close(self):
         self.save_state()
