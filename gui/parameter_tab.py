@@ -107,18 +107,18 @@ class ParameterTab(ttk.Frame):
             )
             down_btn.grid(row=0, column=3, padx=(2, 0))
 
-            params_frame = ttk.Frame(outer)
-            params_frame.grid(row=1, column=0, sticky="nsew")
+            grid_frame = ttk.Frame(outer)
+            grid_frame.grid(row=1, column=0, sticky="nsew")
 
             self.widget_registry[section] = {
                 "frame": outer,
-                "params_frame": params_frame,
+                "grid_frame": grid_frame,
                 "params": {},
                 "toggle": toggle_btn,
             }
 
             if collapsed:
-                params_frame.grid_remove()
+                grid_frame.grid_remove()
 
             for index, (param_name, param_value) in enumerate(params.items()):
                 self.create_parameter_widget(section, index, param_name, param_value)
@@ -127,7 +127,7 @@ class ParameterTab(ttk.Frame):
     def create_parameter_widget(self, section, index, param_name, param_value):
         section_info = self.widget_registry[section]
         row, column = divmod(index, self.grid_columns)
-        container = section_info["params_frame"]
+        container = section_info["grid_frame"]
         parameter_frame = ttk.Frame(container, borderwidth=1, relief="solid")
         parameter_frame.grid(row=row, column=column, padx=4, pady=4, sticky="nsew")
 
@@ -231,7 +231,7 @@ class ParameterTab(ttk.Frame):
 
     def layout_parameters(self):
         for section, info in self.widget_registry.items():
-            container = info["params_frame"]
+            container = info["grid_frame"]
             for i in range(self.grid_columns):
                 container.columnconfigure(i, weight=1, uniform="param_cols")
             for index, param_name in enumerate(self.sections[section].keys()):
@@ -245,10 +245,10 @@ class ParameterTab(ttk.Frame):
             return
         collapsed = self.section_states.get(section, False)
         if collapsed:
-            info["params_frame"].grid()
+            info["grid_frame"].grid()
             info["toggle"].config(text="-")
         else:
-            info["params_frame"].grid_remove()
+            info["grid_frame"].grid_remove()
             info["toggle"].config(text="+")
         self.section_states[section] = not collapsed
         self.adjust_window_size()
