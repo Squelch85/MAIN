@@ -31,8 +31,7 @@ program, the set of open files, window size and per-file UI state (collapsed
 sections and custom ordering) are stored in `gui/state.json` and reloaded on the
 next start so the interface appears exactly as you left it.
 
-When you manually resize the main window, its width snaps to the nearest
-120‑pixel increment to keep parameter columns aligned.
+When you resize the main window, its width now snaps to the nearest 120-pixel increment to keep parameter columns aligned.
 
 ## Contributing
 - Follow [PEP 8](https://peps.python.org/pep-0008/) for code style.

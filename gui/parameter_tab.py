@@ -201,26 +201,39 @@ class ParameterTab(ttk.Frame):
             self.canvas.yview_scroll(1, "units")
 
     def on_resize(self, event):
+        # 1) 오직 최상위 윈도우 리사이즈에만 반응
         toplevel = self.winfo_toplevel()
-
         if event.widget is not toplevel:
             return
 
+        # 2) 최초 이벤트는 스냅 초기화만 수행
         if not self._snap_initialized:
             self._snap_initialized = True
             self._last_snapped_width = toplevel.winfo_width()
             return
 
+        # 3) 연속 같은 사이즈 이벤트는 무시
         if self._last_snapped_width == event.width:
             self._last_snapped_width = None
             return
 
+        # 4) 컬럼 수 재계산 및 스냅 너비 산출
         new_cols = max(1, self.winfo_width() // 120)
         padding = toplevel.winfo_width() - self.winfo_width()
         snap_width = new_cols * 120 + padding
 
-        if snap_width != event.width:
+        # 5) 스냅 너비가 다르면 창 크기 조정
+        if toplevel.winfo_width() != snap_width:
+            toplevel.geometry(f"{snap_width}x{toplevel.winfo_height()}")
+            # 다음 리사이즈 이벤트 비교를 위해 저장
             self._last_snapped_width = snap_width
+
+        # 6) 컬럼 수가 바뀌었으면 레이아웃 갱신
+        if new_cols != self.grid_columns:
+            self.grid_columns = new_cols
+            self.layout_parameters()
+            self.adjust_window_size()
+ main
             toplevel.geometry(f"{snap_width}x{toplevel.winfo_height()}")
 
         if new_cols != self.grid_columns:
