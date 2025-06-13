@@ -40,10 +40,10 @@ class ParameterTab(ttk.Frame):
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # 탭 내부 어디서나 마우스 휠 스크롤을 허용
-        self._wheel_bind_id = self.bind_all("<MouseWheel>", self._on_mousewheel)
-        self._btn4_bind_id = self.bind_all("<Button-4>", self._on_mousewheel)
-        self._btn5_bind_id = self.bind_all("<Button-5>", self._on_mousewheel)
+        # 탭 내부에서 마우스 휠 스크롤을 처리
+        self._wheel_bind_id = self.canvas.bind("<MouseWheel>", self._on_mousewheel)
+        self._btn4_bind_id = self.canvas.bind("<Button-4>", self._on_mousewheel)
+        self._btn5_bind_id = self.canvas.bind("<Button-5>", self._on_mousewheel)
 
         # 창 크기 변화를 감지해 레이아웃을 재계산
         self._padding = 0
@@ -334,9 +334,12 @@ class ParameterTab(ttk.Frame):
         toplevel = self.winfo_toplevel()
         if hasattr(self, "_resize_bind_id"):
             toplevel.unbind("<Configure>", self._resize_bind_id)
-        self.unbind_all("<MouseWheel>")
-        self.unbind_all("<Button-4>")
-        self.unbind_all("<Button-5>")
+        if hasattr(self, "_wheel_bind_id"):
+            self.canvas.unbind("<MouseWheel>", self._wheel_bind_id)
+        if hasattr(self, "_btn4_bind_id"):
+            self.canvas.unbind("<Button-4>", self._btn4_bind_id)
+        if hasattr(self, "_btn5_bind_id"):
+            self.canvas.unbind("<Button-5>", self._btn5_bind_id)
         super().destroy()
 
 
