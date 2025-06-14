@@ -67,6 +67,10 @@ class ParameterTab(ttk.Frame):
         """Return a font size based on the current cell width."""
         return max(8, min(20, int(self.cell_width / 8)))
 
+    def _compute_entry_width(self):
+        """Return an entry widget width that scales with the cell width."""
+        return max(4, min(20, self.cell_width // 12))
+
     def set_cell_size(self, width):
         """Set cell width and update layout and fonts."""
         width = max(60, min(240, width))
@@ -76,7 +80,12 @@ class ParameterTab(ttk.Frame):
         if hasattr(self, "font"):
             self.font.configure(size=self._compute_font_size())
         self.layout_parameters()
-        self.adjust_window_size()
+        for info in self.widget_registry.values():
+            for frame, toggle, entry in info["params"].values():
+                entry.configure(width=self._compute_entry_width(), font=self.font)
+        if hasattr(self, "tk"):
+            self.update_layout_for_current_size()
+            self.adjust_window_size()
 
     def update_layout_for_current_size(self):
         """Recalculate grid layout using the current toplevel size."""
@@ -197,7 +206,9 @@ class ParameterTab(ttk.Frame):
         )
         toggle_button.grid(row=1, column=0)
 
-        value_entry = ttk.Entry(parameter_frame, width=8)
+        value_entry = ttk.Entry(
+            parameter_frame, width=self._compute_entry_width(), font=self.font
+        )
         value_entry.insert(0, param_value)
         value_entry.bind(
             "<Return>",
@@ -218,6 +229,7 @@ class ParameterTab(ttk.Frame):
         )
         value_entry.delete(0, tk.END)
         value_entry.insert(0, param_value)
+        value_entry.configure(width=self._compute_entry_width(), font=self.font)
 
     def toggle_parameter_value(self, section, param_name):
         current = self.sections[section][param_name]
