@@ -33,6 +33,8 @@ class ParameterManagerGUI:
             if os.path.exists(f):
                 self._open_file(f)
         self.root_window.protocol("WM_DELETE_WINDOW", self.on_close)
+        # Bind once to handle window resize events and delegate to the active tab
+        self._resize_bind_id = self.root_window.bind("<Configure>", self.on_root_resize)
 
     def switch_active_tab(self, new_tab):
         """Manage global mouse wheel bindings when the active tab changes."""
@@ -103,6 +105,9 @@ class ParameterManagerGUI:
             self.file_states,
         )
         self.switch_active_tab(None)
+        # remove resize binding before destroying the window
+        if hasattr(self, "_resize_bind_id"):
+            self.root_window.unbind("<Configure>", self._resize_bind_id)
         self.root_window.destroy()
 
     def _open_file(self, file_path):
@@ -122,4 +127,9 @@ class ParameterManagerGUI:
         self.switch_active_tab(tab)
         if hasattr(tab, "update_layout_for_current_size"):
             tab.update_layout_for_current_size()
+
+    def on_root_resize(self, event):
+        """Delegate root <Configure> events to the active tab."""
+        if self.current_tab and hasattr(self.current_tab, "on_resize"):
+            self.current_tab.on_resize(event)
 
