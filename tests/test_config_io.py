@@ -1,5 +1,4 @@
 import hashlib
-from collections import OrderedDict
 
 from config_io import compute_file_hash, load_parameters, save_parameters
 
@@ -26,10 +25,10 @@ def test_load_parameters(tmp_path):
 
 
 def test_save_parameters_roundtrip(tmp_path):
-    sections = OrderedDict([
-        ("DEFAULT", OrderedDict([("key", "1")])),
-        ("Section", OrderedDict([("value", "2")]))
-    ])
+    sections = {
+        "DEFAULT": {"key": "1"},
+        "Section": {"value": "2"},
+    }
     output = tmp_path / "out.ini"
     save_parameters(str(output), sections)
     reloaded = load_parameters(str(output))

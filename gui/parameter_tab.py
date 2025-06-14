@@ -2,7 +2,6 @@ import tkinter as tk
 import tkinter.font as tkfont
 from tkinter import ttk
 import os
-from collections import OrderedDict
 from config_io import compute_file_hash, load_parameters, save_parameters
 
 # 기본 셀 폭. 기존 폭(120)에서 약 15% 줄여 UI 공간 활용도를 높인다.
@@ -12,8 +11,9 @@ class ParameterTab(ttk.Frame):
     def __init__(self, master, file_path, initial_state=None, cell_width=None):
         super().__init__(master)
         self.file_path = file_path
-        self.sections = OrderedDict()
+        self.sections = {}
         self.last_file_hash = None
+        self.last_mtime = 0
         self.widget_registry = {}
         self.section_states = (initial_state or {}).get("collapsed", {})
         self._saved_order = (initial_state or {}).get("order")
@@ -60,6 +60,7 @@ class ParameterTab(ttk.Frame):
         self._padding = 0
         self._padding_initialized = False
         self._resize_bind_id = None
+        self._adjust_id = None
 
         self.load_parameters()
 
@@ -105,9 +106,13 @@ class ParameterTab(ttk.Frame):
 
     def load_parameters(self):
         self.last_file_hash = compute_file_hash(self.file_path)
+        try:
+            self.last_mtime = os.path.getmtime(self.file_path)
+        except OSError:
+            self.last_mtime = 0
         self.sections = load_parameters(self.file_path)
         if self._saved_order:
-            ordered = OrderedDict()
+            ordered = {}
             for sec in self._saved_order:
                 if sec in self.sections:
                     ordered[sec] = self.sections[sec]
@@ -253,6 +258,16 @@ class ParameterTab(ttk.Frame):
             self.after(1000, self.monitor_file_changes)
             return
         interval = 1000 if file_size < 1024 * 10 else 2000
+        try:
+            current_mtime = os.path.getmtime(self.file_path)
+        except OSError:
+            self.after(interval, self.monitor_file_changes)
+            return
+
+        if current_mtime == self.last_mtime:
+            self.after(interval, self.monitor_file_changes)
+            return
+
         current_hash = compute_file_hash(self.file_path)
         if current_hash != self.last_file_hash:
             try:
@@ -284,9 +299,16 @@ class ParameterTab(ttk.Frame):
                 self.adjust_window_size()
 
             self.last_file_hash = current_hash
+        self.last_mtime = current_mtime
         self.after(interval, self.monitor_file_changes)
 
     def adjust_window_size(self):
+        if self._adjust_id is not None:
+            self.after_cancel(self._adjust_id)
+        self._adjust_id = self.after(50, self._perform_adjust)
+
+    def _perform_adjust(self):
+        self._adjust_id = None
         self.update_idletasks()
         bbox = self.canvas.bbox("all")
         if bbox:
@@ -366,7 +388,7 @@ class ParameterTab(ttk.Frame):
         idx = keys.index(section)
         if idx > 0:
             keys[idx - 1], keys[idx] = keys[idx], keys[idx - 1]
-            self.sections = OrderedDict((k, self.sections[k]) for k in keys)
+            self.sections = {k: self.sections[k] for k in keys}
             self.refresh_ui()
             self.adjust_window_size()
             save_parameters(self.file_path, self.sections)
@@ -376,7 +398,7 @@ class ParameterTab(ttk.Frame):
         idx = keys.index(section)
         if idx < len(keys) - 1:
             keys[idx + 1], keys[idx] = keys[idx], keys[idx + 1]
-            self.sections = OrderedDict((k, self.sections[k]) for k in keys)
+            self.sections = {k: self.sections[k] for k in keys}
             self.refresh_ui()
             self.adjust_window_size()
             save_parameters(self.file_path, self.sections)
