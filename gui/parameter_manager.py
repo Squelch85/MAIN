@@ -26,6 +26,7 @@ class ParameterManagerGUI:
         self.tab_menu.add_command(label="Close", command=self.close_current_tab)
 
         self.tabs = {}
+        self.paths_by_tab = {}
         self.current_tab = None
         self.initialize_menu()
 
@@ -93,11 +94,7 @@ class ParameterManagerGUI:
             return
         tab_id = self.notebook.tabs()[index]
         tab = self.notebook.nametowidget(tab_id)
-        file_path = None
-        for path, t in list(self.tabs.items()):
-            if t == tab:
-                file_path = path
-                break
+        file_path = self.paths_by_tab.get(tab)
 
         if tab == self.current_tab:
             self.switch_active_tab(None)
@@ -106,6 +103,7 @@ class ParameterManagerGUI:
 
         if file_path:
             self.tabs.pop(file_path, None)
+            self.paths_by_tab.pop(tab, None)
             if file_path in self.open_files:
                 self.open_files.remove(file_path)
 
@@ -134,6 +132,7 @@ class ParameterManagerGUI:
         )
         self.notebook.add(tab, text=os.path.basename(file_path))
         self.tabs[file_path] = tab
+        self.paths_by_tab[tab] = file_path
         self.notebook.select(tab)
         tab.update_layout_for_current_size()
         self.switch_active_tab(tab)
