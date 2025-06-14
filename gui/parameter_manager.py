@@ -52,6 +52,11 @@ class ParameterManagerGUI:
         file_menu.add_command(label="Open File(s)", command=self.open_files_dialog)
         file_menu.add_command(label="Exit", command=self.on_close)
         menu_bar.add_cascade(label="File", menu=file_menu)
+
+        view_menu = tk.Menu(menu_bar, tearoff=0)
+        view_menu.add_command(label="Increase Cell Size", command=self.increase_cell_size)
+        view_menu.add_command(label="Decrease Cell Size", command=self.decrease_cell_size)
+        menu_bar.add_cascade(label="View", menu=view_menu)
         self.root_window.config(menu=menu_bar)
 
 
@@ -120,6 +125,14 @@ class ParameterManagerGUI:
         self.switch_active_tab(tab)
         if file_path not in self.open_files:
             self.open_files.append(file_path)
+
+    def increase_cell_size(self):
+        if self.current_tab and hasattr(self.current_tab, "increase_cell_size"):
+            self.current_tab.increase_cell_size()
+
+    def decrease_cell_size(self):
+        if self.current_tab and hasattr(self.current_tab, "decrease_cell_size"):
+            self.current_tab.decrease_cell_size()
 
     def on_tab_changed(self, event):
         tab_id = self.notebook.select()

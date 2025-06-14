@@ -10,7 +10,7 @@ def test_save_and_load_state(tmp_path):
     state_file = tmp_path / "state.json"
     geometry = "800x600+100+100"
     files = ["a.ini", "b.ini"]
-    file_states = {"a.ini": {"collapsed": {"Sec": True}}}
+    file_states = {"a.ini": {"collapsed": {"Sec": True}, "cell_width": 100}}
     save_state(str(state_file), geometry, files, file_states)
     loaded_geometry, loaded_files, loaded_states = load_state(str(state_file))
     assert loaded_geometry == geometry

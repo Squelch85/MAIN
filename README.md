@@ -25,6 +25,7 @@ python INI_EDIT.py
 열린 INI 파일들은 탭 인터페이스에 표시됩니다. 창을 닫을 때 열린 파일 목록, 창 크기, 섹션 접힘 상태 등이 사용자의 홈 디렉터리 아래 `.ini_editor/state.json`에 기록되며 다음 실행 시 그대로 복원됩니다. 읽기나 쓰기에 실패하면 경고 로그가 남습니다.
 
 메인 창 크기를 자유롭게 조절하면 즉시 적용되며 스냅 제한은 없습니다.
+셀 크기를 조절하려면 메뉴 바의 "View" 메뉴에서 "Increase Cell Size" 또는 "Decrease Cell Size"를 선택하세요.
 
 ## 기여 방법
 - 코드 스타일은 [PEP 8](https://peps.python.org/pep-0008/)을 따릅니다.

@@ -15,7 +15,8 @@ class ParameterTab(ttk.Frame):
         self._saved_order = (initial_state or {}).get("order")
         # 셀의 고정 폭과 초기 열 개수
         # 기존 폭(120)에서 약 15% 줄여 UI 공간 활용도를 높인다
-        self.cell_width = int(120 * 0.85)
+        default_width = int(120 * 0.85)
+        self.cell_width = (initial_state or {}).get("cell_width", default_width)
         self.grid_columns = 4
 
         self.canvas = tk.Canvas(self)
@@ -210,11 +211,19 @@ class ParameterTab(ttk.Frame):
     def monitor_file_changes(self):
         if not self.file_path:
             return
-        file_size = os.path.getsize(self.file_path)
+        try:
+            file_size = os.path.getsize(self.file_path)
+        except FileNotFoundError:
+            self.after(1000, self.monitor_file_changes)
+            return
         interval = 1000 if file_size < 1024 * 10 else 2000
         current_hash = compute_file_hash(self.file_path)
         if current_hash != self.last_file_hash:
-            new_sections = load_parameters(self.file_path)
+            try:
+                new_sections = load_parameters(self.file_path)
+            except FileNotFoundError:
+                self.after(interval, self.monitor_file_changes)
+                return
 
             structure_changed = (
                 list(new_sections.keys()) != list(self.sections.keys())
@@ -297,6 +306,7 @@ class ParameterTab(ttk.Frame):
                 container.columnconfigure(i, minsize=self.cell_width)
             for index, param_name in enumerate(self.sections[section].keys()):
                 frame = info["params"][param_name][0]
+                frame.configure(width=self.cell_width)
                 row, column = divmod(index, self.grid_columns)
                 row += 1
                 frame.grid_configure(row=row, column=column, sticky="nw")
@@ -335,11 +345,26 @@ class ParameterTab(ttk.Frame):
             self.adjust_window_size()
             save_parameters(self.file_path, self.sections)
 
+    def increase_cell_size(self):
+        """Increase the width of parameter cells within a safe range."""
+        if self.cell_width < 240:
+            self.cell_width += 10
+            self.layout_parameters()
+            self.adjust_window_size()
+
+    def decrease_cell_size(self):
+        """Decrease the width of parameter cells within a safe range."""
+        if self.cell_width > 60:
+            self.cell_width -= 10
+            self.layout_parameters()
+            self.adjust_window_size()
+
     def get_state(self):
         """섹션 접힘 상태와 순서를 저장하기 위한 딕셔너리를 반환합니다."""
         return {
             "collapsed": self.section_states,
             "order": list(self.sections.keys()),
+            "cell_width": self.cell_width,
         }
 
     def destroy(self):
