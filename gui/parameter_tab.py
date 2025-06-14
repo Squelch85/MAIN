@@ -365,7 +365,7 @@ class ParameterTab(ttk.Frame):
         for section, info in self.widget_registry.items():
             container = info["grid_frame"]
             for i in range(self.grid_columns):
-                container.columnconfigure(i, minsize=self.cell_width)
+                container.columnconfigure(i, minsize=0)
             for index, param_name in enumerate(self.sections[section].keys()):
                 frame = info["params"][param_name][0]
                 frame.configure(width=self.cell_width)
