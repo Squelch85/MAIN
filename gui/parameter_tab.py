@@ -1,11 +1,15 @@
 import tkinter as tk
+import tkinter.font as tkfont
 from tkinter import ttk
 import os
 from collections import OrderedDict
 from config_io import compute_file_hash, load_parameters, save_parameters
 
+# 기본 셀 폭. 기존 폭(120)에서 약 15% 줄여 UI 공간 활용도를 높인다.
+DEFAULT_CELL_WIDTH = int(120 * 0.85)
+
 class ParameterTab(ttk.Frame):
-    def __init__(self, master, file_path, initial_state=None):
+    def __init__(self, master, file_path, initial_state=None, cell_width=None):
         super().__init__(master)
         self.file_path = file_path
         self.sections = OrderedDict()
@@ -14,10 +18,15 @@ class ParameterTab(ttk.Frame):
         self.section_states = (initial_state or {}).get("collapsed", {})
         self._saved_order = (initial_state or {}).get("order")
         # 셀의 고정 폭과 초기 열 개수
-        # 기존 폭(120)에서 약 15% 줄여 UI 공간 활용도를 높인다
-        default_width = int(120 * 0.85)
-        self.cell_width = (initial_state or {}).get("cell_width", default_width)
+        self.cell_width = cell_width or (initial_state or {}).get(
+            "cell_width", DEFAULT_CELL_WIDTH
+        )
         self.grid_columns = 4
+
+        # 텍스트 크기 조정을 위한 Font 객체
+        self.font = tkfont.Font(
+            family="Arial", size=self._compute_font_size(), weight="bold"
+        )
 
         self.canvas = tk.Canvas(self)
         self.scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.canvas.yview)
@@ -53,6 +62,21 @@ class ParameterTab(ttk.Frame):
         self._resize_bind_id = None
 
         self.load_parameters()
+
+    def _compute_font_size(self):
+        """Return a font size based on the current cell width."""
+        return max(8, min(20, int(self.cell_width / 8)))
+
+    def set_cell_size(self, width):
+        """Set cell width and update layout and fonts."""
+        width = max(60, min(240, width))
+        if width == self.cell_width:
+            return
+        self.cell_width = width
+        if hasattr(self, "font"):
+            self.font.configure(size=self._compute_font_size())
+        self.layout_parameters()
+        self.adjust_window_size()
 
     def update_layout_for_current_size(self):
         """Recalculate grid layout using the current toplevel size."""
@@ -121,7 +145,7 @@ class ParameterTab(ttk.Frame):
             )
             down_btn.pack(side="left")
 
-            ttk.Label(header, text=section, font=("Arial", 9, "bold")).pack(
+            ttk.Label(header, text=section, font=self.font).pack(
                 side="left", padx=(4, 0), fill="x", expand=True
             )
 
@@ -158,7 +182,7 @@ class ParameterTab(ttk.Frame):
         ttk.Label(
             parameter_frame,
             text=param_name,
-            font=("Arial", 10, "bold"),
+            font=self.font,
             anchor=tk.W,
         ).grid(row=0, column=0, columnspan=2, sticky=tk.W)
 
@@ -167,7 +191,7 @@ class ParameterTab(ttk.Frame):
             text="ON" if param_value == "1" else "OFF",
             bg="green" if param_value == "1" else "red",
             fg="white",
-            font=("Arial", 10, "bold"),
+            font=self.font,
             width=4,
             command=lambda: self.toggle_parameter_value(section, param_name),
         )
@@ -189,7 +213,7 @@ class ParameterTab(ttk.Frame):
             text="ON" if param_value == "1" else "OFF",
             bg="green" if param_value == "1" else "red",
             fg="white",
-            font=("Arial", 10, "bold"),
+            font=self.font,
             width=4,
         )
         value_entry.delete(0, tk.END)
@@ -347,17 +371,11 @@ class ParameterTab(ttk.Frame):
 
     def increase_cell_size(self):
         """Increase the width of parameter cells within a safe range."""
-        if self.cell_width < 240:
-            self.cell_width += 10
-            self.layout_parameters()
-            self.adjust_window_size()
+        self.set_cell_size(self.cell_width + 10)
 
     def decrease_cell_size(self):
         """Decrease the width of parameter cells within a safe range."""
-        if self.cell_width > 60:
-            self.cell_width -= 10
-            self.layout_parameters()
-            self.adjust_window_size()
+        self.set_cell_size(self.cell_width - 10)
 
     def get_state(self):
         """섹션 접힘 상태와 순서를 저장하기 위한 딕셔너리를 반환합니다."""
