@@ -45,11 +45,11 @@ class ParameterTab(ttk.Frame):
         # 각 탭이 활성화될 때 bind_mousewheel()을 호출해 전역 스크롤을 설정한다.
 
         # 창 크기 변화를 감지해 레이아웃을 재계산
+        # ParameterManagerGUI will delegate resize events to the active tab,
+        # so no direct binding is done here.
         self._padding = 0
         self._padding_initialized = False
-        self._resize_bind_id = self.winfo_toplevel().bind(
-            "<Configure>", self.on_resize, add="+"
-        )
+        self._resize_bind_id = None
 
         self.load_parameters()
 
@@ -344,9 +344,8 @@ class ParameterTab(ttk.Frame):
 
     def destroy(self):
         """Remove event bindings and destroy the tab."""
-        toplevel = self.winfo_toplevel()
-        if hasattr(self, "_resize_bind_id"):
-            toplevel.unbind("<Configure>", self._resize_bind_id)
+        # Resize events are managed by ParameterManagerGUI, so no unbinding
+        # of <Configure> is necessary here.
         self.unbind_mousewheel()
         super().destroy()
 
