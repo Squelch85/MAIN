@@ -97,8 +97,10 @@ class ParameterTab(ttk.Frame):
         self._padding = toplevel.winfo_width() - self.winfo_width()
         self._padding_initialized = True
         width = toplevel.winfo_width()
-        new_cols = max(1, (width - self._padding) // self.cell_width)
-        self.canvas.itemconfigure(self.canvas_window, width=width - self._padding)
+        tab_width = width - self._padding
+        canvas_width = tab_width - self.scrollbar.winfo_width()
+        new_cols = max(1, canvas_width // self.cell_width)
+        self.canvas.itemconfigure(self.canvas_window, width=canvas_width)
         if new_cols != self.grid_columns:
             self.grid_columns = new_cols
             self.layout_parameters()
@@ -346,10 +348,12 @@ class ParameterTab(ttk.Frame):
             self._padding = event.width - self.winfo_width()
             self._padding_initialized = True
 
-        new_cols = max(1, (event.width - self._padding) // self.cell_width)
+        tab_width = event.width - self._padding
+        canvas_width = tab_width - self.scrollbar.winfo_width()
+        new_cols = max(1, canvas_width // self.cell_width)
 
         # 창 크기에 맞춰 내부 프레임 폭을 바로 반영
-        self.canvas.itemconfigure(self.canvas_window, width=event.width - self._padding)
+        self.canvas.itemconfigure(self.canvas_window, width=canvas_width)
 
         if new_cols != self.grid_columns:
             self.grid_columns = new_cols
