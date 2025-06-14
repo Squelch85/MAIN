@@ -1,32 +1,22 @@
 import tkinter as tk
-import tkinter.font as tkfont
 from tkinter import ttk
 import os
+from collections import OrderedDict
 from config_io import compute_file_hash, load_parameters, save_parameters
 
-# 기본 셀 폭. 기존 폭(120)에서 약 15% 줄여 UI 공간 활용도를 높인다.
-DEFAULT_CELL_WIDTH = int(120 * 0.85)
-
 class ParameterTab(ttk.Frame):
-    def __init__(self, master, file_path, initial_state=None, cell_width=None):
+    def __init__(self, master, file_path, initial_state=None):
         super().__init__(master)
         self.file_path = file_path
-        self.sections = {}
+        self.sections = OrderedDict()
         self.last_file_hash = None
-        self.last_mtime = 0
         self.widget_registry = {}
         self.section_states = (initial_state or {}).get("collapsed", {})
         self._saved_order = (initial_state or {}).get("order")
         # 셀의 고정 폭과 초기 열 개수
-        self.cell_width = cell_width or (initial_state or {}).get(
-            "cell_width", DEFAULT_CELL_WIDTH
-        )
+        # 기존 폭(120)에서 약 15% 줄여 UI 공간 활용도를 높인다
+        self.cell_width = int(120 * 0.85)
         self.grid_columns = 4
-
-        # 텍스트 크기 조정을 위한 Font 객체
-        self.font = tkfont.Font(
-            family="Arial", size=self._compute_font_size(), weight="bold"
-        )
 
         self.canvas = tk.Canvas(self)
         self.scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.canvas.yview)
@@ -60,33 +50,8 @@ class ParameterTab(ttk.Frame):
         self._padding = 0
         self._padding_initialized = False
         self._resize_bind_id = None
-        self._adjust_id = None
 
         self.load_parameters()
-
-    def _compute_font_size(self):
-        """Return a font size based on the current cell width."""
-        return max(8, min(20, int(self.cell_width / 8)))
-
-    def _compute_entry_width(self):
-        """Return an entry widget width that scales with the cell width."""
-        return max(4, min(20, self.cell_width // 12))
-
-    def set_cell_size(self, width):
-        """Set cell width and update layout and fonts."""
-        width = max(60, min(240, width))
-        if width == self.cell_width:
-            return
-        self.cell_width = width
-        if hasattr(self, "font"):
-            self.font.configure(size=self._compute_font_size())
-        self.layout_parameters()
-        for info in self.widget_registry.values():
-            for frame, toggle, entry in info["params"].values():
-                entry.configure(width=self._compute_entry_width(), font=self.font)
-        if hasattr(self, "tk"):
-            self.update_layout_for_current_size()
-            self.adjust_window_size()
 
     def update_layout_for_current_size(self):
         """Recalculate grid layout using the current toplevel size."""
@@ -97,10 +62,8 @@ class ParameterTab(ttk.Frame):
         self._padding = toplevel.winfo_width() - self.winfo_width()
         self._padding_initialized = True
         width = toplevel.winfo_width()
-        tab_width = width - self._padding
-        canvas_width = tab_width - self.scrollbar.winfo_width()
-        new_cols = max(1, canvas_width // self.cell_width)
-        self.canvas.itemconfigure(self.canvas_window, width=canvas_width)
+        new_cols = max(1, (width - self._padding) // self.cell_width)
+        self.canvas.itemconfigure(self.canvas_window, width=width - self._padding)
         if new_cols != self.grid_columns:
             self.grid_columns = new_cols
             self.layout_parameters()
@@ -108,13 +71,9 @@ class ParameterTab(ttk.Frame):
 
     def load_parameters(self):
         self.last_file_hash = compute_file_hash(self.file_path)
-        try:
-            self.last_mtime = os.path.getmtime(self.file_path)
-        except OSError:
-            self.last_mtime = 0
         self.sections = load_parameters(self.file_path)
         if self._saved_order:
-            ordered = {}
+            ordered = OrderedDict()
             for sec in self._saved_order:
                 if sec in self.sections:
                     ordered[sec] = self.sections[sec]
@@ -161,7 +120,7 @@ class ParameterTab(ttk.Frame):
             )
             down_btn.pack(side="left")
 
-            ttk.Label(header, text=section, font=self.font).pack(
+            ttk.Label(header, text=section, font=("Arial", 9, "bold")).pack(
                 side="left", padx=(4, 0), fill="x", expand=True
             )
 
@@ -198,7 +157,7 @@ class ParameterTab(ttk.Frame):
         ttk.Label(
             parameter_frame,
             text=param_name,
-            font=self.font,
+            font=("Arial", 10, "bold"),
             anchor=tk.W,
         ).grid(row=0, column=0, columnspan=2, sticky=tk.W)
 
@@ -207,15 +166,13 @@ class ParameterTab(ttk.Frame):
             text="ON" if param_value == "1" else "OFF",
             bg="green" if param_value == "1" else "red",
             fg="white",
-            font=self.font,
+            font=("Arial", 10, "bold"),
             width=4,
             command=lambda: self.toggle_parameter_value(section, param_name),
         )
         toggle_button.grid(row=1, column=0)
 
-        value_entry = ttk.Entry(
-            parameter_frame, width=self._compute_entry_width(), font=self.font
-        )
+        value_entry = ttk.Entry(parameter_frame, width=8)
         value_entry.insert(0, param_value)
         value_entry.bind(
             "<Return>",
@@ -231,12 +188,11 @@ class ParameterTab(ttk.Frame):
             text="ON" if param_value == "1" else "OFF",
             bg="green" if param_value == "1" else "red",
             fg="white",
-            font=self.font,
+            font=("Arial", 10, "bold"),
             width=4,
         )
         value_entry.delete(0, tk.END)
         value_entry.insert(0, param_value)
-        value_entry.configure(width=self._compute_entry_width(), font=self.font)
 
     def toggle_parameter_value(self, section, param_name):
         current = self.sections[section][param_name]
@@ -254,29 +210,11 @@ class ParameterTab(ttk.Frame):
     def monitor_file_changes(self):
         if not self.file_path:
             return
-        try:
-            file_size = os.path.getsize(self.file_path)
-        except FileNotFoundError:
-            self.after(1000, self.monitor_file_changes)
-            return
+        file_size = os.path.getsize(self.file_path)
         interval = 1000 if file_size < 1024 * 10 else 2000
-        try:
-            current_mtime = os.path.getmtime(self.file_path)
-        except OSError:
-            self.after(interval, self.monitor_file_changes)
-            return
-
-        if current_mtime == self.last_mtime:
-            self.after(interval, self.monitor_file_changes)
-            return
-
         current_hash = compute_file_hash(self.file_path)
         if current_hash != self.last_file_hash:
-            try:
-                new_sections = load_parameters(self.file_path)
-            except FileNotFoundError:
-                self.after(interval, self.monitor_file_changes)
-                return
+            new_sections = load_parameters(self.file_path)
 
             structure_changed = (
                 list(new_sections.keys()) != list(self.sections.keys())
@@ -301,16 +239,9 @@ class ParameterTab(ttk.Frame):
                 self.adjust_window_size()
 
             self.last_file_hash = current_hash
-        self.last_mtime = current_mtime
         self.after(interval, self.monitor_file_changes)
 
     def adjust_window_size(self):
-        if self._adjust_id is not None:
-            self.after_cancel(self._adjust_id)
-        self._adjust_id = self.after(50, self._perform_adjust)
-
-    def _perform_adjust(self):
-        self._adjust_id = None
         self.update_idletasks()
         bbox = self.canvas.bbox("all")
         if bbox:
@@ -348,12 +279,10 @@ class ParameterTab(ttk.Frame):
             self._padding = event.width - self.winfo_width()
             self._padding_initialized = True
 
-        tab_width = event.width - self._padding
-        canvas_width = tab_width - self.scrollbar.winfo_width()
-        new_cols = max(1, canvas_width // self.cell_width)
+        new_cols = max(1, (event.width - self._padding) // self.cell_width)
 
         # 창 크기에 맞춰 내부 프레임 폭을 바로 반영
-        self.canvas.itemconfigure(self.canvas_window, width=canvas_width)
+        self.canvas.itemconfigure(self.canvas_window, width=event.width - self._padding)
 
         if new_cols != self.grid_columns:
             self.grid_columns = new_cols
@@ -365,10 +294,9 @@ class ParameterTab(ttk.Frame):
         for section, info in self.widget_registry.items():
             container = info["grid_frame"]
             for i in range(self.grid_columns):
-                container.columnconfigure(i, minsize=0)
+                container.columnconfigure(i, minsize=self.cell_width)
             for index, param_name in enumerate(self.sections[section].keys()):
                 frame = info["params"][param_name][0]
-                frame.configure(width=self.cell_width)
                 row, column = divmod(index, self.grid_columns)
                 row += 1
                 frame.grid_configure(row=row, column=column, sticky="nw")
@@ -392,7 +320,7 @@ class ParameterTab(ttk.Frame):
         idx = keys.index(section)
         if idx > 0:
             keys[idx - 1], keys[idx] = keys[idx], keys[idx - 1]
-            self.sections = {k: self.sections[k] for k in keys}
+            self.sections = OrderedDict((k, self.sections[k]) for k in keys)
             self.refresh_ui()
             self.adjust_window_size()
             save_parameters(self.file_path, self.sections)
@@ -402,25 +330,16 @@ class ParameterTab(ttk.Frame):
         idx = keys.index(section)
         if idx < len(keys) - 1:
             keys[idx + 1], keys[idx] = keys[idx], keys[idx + 1]
-            self.sections = {k: self.sections[k] for k in keys}
+            self.sections = OrderedDict((k, self.sections[k]) for k in keys)
             self.refresh_ui()
             self.adjust_window_size()
             save_parameters(self.file_path, self.sections)
-
-    def increase_cell_size(self):
-        """Increase the width of parameter cells within a safe range."""
-        self.set_cell_size(self.cell_width + 10)
-
-    def decrease_cell_size(self):
-        """Decrease the width of parameter cells within a safe range."""
-        self.set_cell_size(self.cell_width - 10)
 
     def get_state(self):
         """섹션 접힘 상태와 순서를 저장하기 위한 딕셔너리를 반환합니다."""
         return {
             "collapsed": self.section_states,
             "order": list(self.sections.keys()),
-            "cell_width": self.cell_width,
         }
 
     def destroy(self):

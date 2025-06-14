@@ -1,7 +1,7 @@
 import os
 import tkinter as tk
 from tkinter import ttk, filedialog
-from .parameter_tab import ParameterTab, DEFAULT_CELL_WIDTH
+from .parameter_tab import ParameterTab
 from state_manager import load_state, save_state
 
 class ParameterManagerGUI:
@@ -15,8 +15,6 @@ class ParameterManagerGUI:
         self.file_states = {}
         self.saved_geometry, self.open_files, self.file_states = load_state(self.state_path)
 
-        self.cell_width = DEFAULT_CELL_WIDTH
-
         self.notebook = ttk.Notebook(self.root_window)
         self.notebook.pack(fill=tk.BOTH, expand=True)
         self.notebook.bind("<Button-3>", self.show_tab_menu)
@@ -26,7 +24,6 @@ class ParameterManagerGUI:
         self.tab_menu.add_command(label="Close", command=self.close_current_tab)
 
         self.tabs = {}
-        self.paths_by_tab = {}
         self.current_tab = None
         self.initialize_menu()
 
@@ -38,12 +35,6 @@ class ParameterManagerGUI:
         self.root_window.protocol("WM_DELETE_WINDOW", self.on_close)
         # Bind once to handle window resize events and delegate to the active tab
         self._resize_bind_id = self.root_window.bind("<Configure>", self.on_root_resize)
-        # Ctrl + mouse wheel to adjust cell size globally
-        self.root_window.bind_all("<Control-MouseWheel>", self._on_ctrl_wheel)
-        self.root_window.bind_all("<Control-Button-4>", self._on_ctrl_wheel)
-        self.root_window.bind_all("<Control-Button-5>", self._on_ctrl_wheel)
-
-        self._update_zoom_title()
 
     def switch_active_tab(self, new_tab):
         """Manage global mouse wheel bindings when the active tab changes."""
@@ -61,12 +52,6 @@ class ParameterManagerGUI:
         file_menu.add_command(label="Open File(s)", command=self.open_files_dialog)
         file_menu.add_command(label="Exit", command=self.on_close)
         menu_bar.add_cascade(label="File", menu=file_menu)
-
-        view_menu = tk.Menu(menu_bar, tearoff=0)
-        view_menu.add_command(label="Increase Cell Size", command=self.increase_cell_size)
-        view_menu.add_command(label="Decrease Cell Size", command=self.decrease_cell_size)
-        view_menu.add_command(label="Reset Cell Size", command=self.reset_cell_size)
-        menu_bar.add_cascade(label="View", menu=view_menu)
         self.root_window.config(menu=menu_bar)
 
 
@@ -94,7 +79,11 @@ class ParameterManagerGUI:
             return
         tab_id = self.notebook.tabs()[index]
         tab = self.notebook.nametowidget(tab_id)
-        file_path = self.paths_by_tab.get(tab)
+        file_path = None
+        for path, t in list(self.tabs.items()):
+            if t == tab:
+                file_path = path
+                break
 
         if tab == self.current_tab:
             self.switch_active_tab(None)
@@ -103,7 +92,6 @@ class ParameterManagerGUI:
 
         if file_path:
             self.tabs.pop(file_path, None)
-            self.paths_by_tab.pop(tab, None)
             if file_path in self.open_files:
                 self.open_files.remove(file_path)
 
@@ -124,34 +112,14 @@ class ParameterManagerGUI:
 
     def _open_file(self, file_path):
         tab_state = self.file_states.get(file_path)
-        tab = ParameterTab(
-            self.notebook,
-            file_path,
-            initial_state=tab_state,
-            cell_width=self.cell_width,
-        )
+        tab = ParameterTab(self.notebook, file_path, initial_state=tab_state)
         self.notebook.add(tab, text=os.path.basename(file_path))
         self.tabs[file_path] = tab
-        self.paths_by_tab[tab] = file_path
         self.notebook.select(tab)
         tab.update_layout_for_current_size()
         self.switch_active_tab(tab)
         if file_path not in self.open_files:
             self.open_files.append(file_path)
-
-    def increase_cell_size(self):
-        if self.cell_width < 240:
-            self.cell_width += 10
-            for tab in self.tabs.values():
-                tab.set_cell_size(self.cell_width)
-            self._update_zoom_title()
-
-    def decrease_cell_size(self):
-        if self.cell_width > 60:
-            self.cell_width -= 10
-            for tab in self.tabs.values():
-                tab.set_cell_size(self.cell_width)
-            self._update_zoom_title()
 
     def on_tab_changed(self, event):
         tab_id = self.notebook.select()
@@ -164,26 +132,4 @@ class ParameterManagerGUI:
         """Delegate root <Configure> events to the active tab."""
         if self.current_tab and hasattr(self.current_tab, "on_resize"):
             self.current_tab.on_resize(event)
-
-    def _update_zoom_title(self):
-        level = (self.cell_width - DEFAULT_CELL_WIDTH) // 10
-        self.root_window.title(f"Parameter Manager (Level {level})")
-
-    def reset_cell_size(self):
-        self.cell_width = DEFAULT_CELL_WIDTH
-        for tab in self.tabs.values():
-            tab.set_cell_size(self.cell_width)
-        self._update_zoom_title()
-
-    def _on_ctrl_wheel(self, event):
-        direction = 1
-        if getattr(event, "delta", 0) < 0 or getattr(event, "num", None) == 5:
-            direction = -1
-        elif getattr(event, "num", None) == 4:
-            direction = 1
-
-        if direction > 0:
-            self.increase_cell_size()
-        else:
-            self.decrease_cell_size()
 
