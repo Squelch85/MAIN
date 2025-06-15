@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import font as tkfont
 import os
 from collections import OrderedDict
 from config_io import compute_file_hash, load_parameters, save_parameters
@@ -13,9 +14,21 @@ class ParameterTab(ttk.Frame):
         self.widget_registry = {}
         self.section_states = (initial_state or {}).get("collapsed", {})
         self._saved_order = (initial_state or {}).get("order")
-        # 셀의 고정 폭과 초기 열 개수
-        # 기존 폭(120)에서 약 15% 줄여 UI 공간 활용도를 높인다
-        self.cell_width = int(120 * 0.85)
+        # 줌 배율과 기본 폰트/셀 크기 설정
+        self.zoom = 1.0
+        self.base_cell_width = int(120 * 0.85)
+        self.cell_width = self.base_cell_width
+        self.base_header_font_size = 9
+        self.base_param_font_size = 10
+        self.header_font = tkfont.Font(
+            family="Arial", size=self.base_header_font_size, weight="bold"
+        )
+        self.param_font = tkfont.Font(
+            family="Arial", size=self.base_param_font_size, weight="bold"
+        )
+        self.button_font = tkfont.Font(
+            family="Arial", size=self.base_param_font_size, weight="bold"
+        )
         self.grid_columns = 4
 
         self.canvas = tk.Canvas(self)
@@ -120,7 +133,7 @@ class ParameterTab(ttk.Frame):
             )
             down_btn.pack(side="left")
 
-            ttk.Label(header, text=section, font=("Arial", 9, "bold")).pack(
+            ttk.Label(header, text=section, font=self.header_font).pack(
                 side="left", padx=(4, 0), fill="x", expand=True
             )
 
@@ -157,7 +170,7 @@ class ParameterTab(ttk.Frame):
         ttk.Label(
             parameter_frame,
             text=param_name,
-            font=("Arial", 10, "bold"),
+            font=self.param_font,
             anchor=tk.W,
         ).grid(row=0, column=0, columnspan=2, sticky=tk.W)
 
@@ -166,7 +179,7 @@ class ParameterTab(ttk.Frame):
             text="ON" if param_value == "1" else "OFF",
             bg="green" if param_value == "1" else "red",
             fg="white",
-            font=("Arial", 10, "bold"),
+            font=self.button_font,
             width=4,
             command=lambda: self.toggle_parameter_value(section, param_name),
         )
@@ -188,7 +201,7 @@ class ParameterTab(ttk.Frame):
             text="ON" if param_value == "1" else "OFF",
             bg="green" if param_value == "1" else "red",
             fg="white",
-            font=("Arial", 10, "bold"),
+            font=self.button_font,
             width=4,
         )
         value_entry.delete(0, tk.END)
@@ -247,8 +260,31 @@ class ParameterTab(ttk.Frame):
         if bbox:
             self.canvas.config(scrollregion=bbox)
 
+    def _apply_zoom(self):
+        """Update fonts and layout according to the current zoom level."""
+        self.cell_width = int(self.base_cell_width * self.zoom)
+        self.header_font.config(size=int(self.base_header_font_size * self.zoom))
+        self.param_font.config(size=int(self.base_param_font_size * self.zoom))
+        self.button_font.config(size=int(self.base_param_font_size * self.zoom))
+        self.update_layout_for_current_size()
+
     def _on_mousewheel(self, event):
-        if hasattr(event, 'delta') and event.delta:
+        ctrl_pressed = bool(event.state & 0x4)
+        if ctrl_pressed:
+            if hasattr(event, "delta") and event.delta:
+                delta = event.delta
+            elif event.num == 4:
+                delta = 120
+            elif event.num == 5:
+                delta = -120
+            else:
+                delta = 0
+            if delta:
+                step = 0.1 if delta > 0 else -0.1
+                self.zoom = max(0.5, min(3.0, self.zoom + step))
+                self._apply_zoom()
+            return "break"
+        if hasattr(event, "delta") and event.delta:
             self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
         elif event.num == 4:
             self.canvas.yview_scroll(-1, "units")
