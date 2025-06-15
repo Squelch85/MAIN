@@ -187,7 +187,7 @@ class ParameterTab(ttk.Frame):
         )
         toggle_button.grid(row=1, column=0)
 
-        value_entry = ttk.Entry(parameter_frame, width=8)
+        value_entry = ttk.Entry(parameter_frame, width=8, font=self.param_font)
         value_entry.insert(0, param_value)
         value_entry.bind(
             "<Return>",
