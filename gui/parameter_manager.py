@@ -13,10 +13,25 @@ class ParameterManagerGUI:
         self.open_files = []
         self.saved_geometry = None
         self.file_states = {}
-        self.saved_geometry, self.open_files, self.file_states = load_state(self.state_path)
+        self.zoom = 1.0
+        (
+            self.saved_geometry,
+            self.open_files,
+            self.file_states,
+            loaded_zoom,
+        ) = load_state(self.state_path)
+        if loaded_zoom is not None:
+            self.zoom = loaded_zoom
 
         self.notebook = ttk.Notebook(self.root_window)
+        style = ttk.Style()
+        style.map("TNotebook.Tab", background=[("selected", "#ddeeff")])
         self.notebook.pack(fill=tk.BOTH, expand=True)
+        self.status_bar = ttk.Frame(self.root_window)
+        self.zoom_label = ttk.Label(self.status_bar, text="")
+        self.zoom_label.pack(side=tk.RIGHT, padx=4)
+        self.status_bar.pack(fill=tk.X, side=tk.BOTTOM)
+        self.update_zoom_label()
         self.notebook.bind("<Button-3>", self.show_tab_menu)
         self.notebook.bind("<<NotebookTabChanged>>", self.on_tab_changed)
 
@@ -32,6 +47,7 @@ class ParameterManagerGUI:
         for f in self.open_files:
             if os.path.exists(f):
                 self._open_file(f)
+        self.set_zoom(self.zoom)
         self.root_window.protocol("WM_DELETE_WINDOW", self.on_close)
         # Bind once to handle window resize events and delegate to the active tab
         self._resize_bind_id = self.root_window.bind("<Configure>", self.on_root_resize)
@@ -52,6 +68,10 @@ class ParameterManagerGUI:
         file_menu.add_command(label="Open File(s)", command=self.open_files_dialog)
         file_menu.add_command(label="Exit", command=self.on_close)
         menu_bar.add_cascade(label="File", menu=file_menu)
+
+        view_menu = tk.Menu(menu_bar, tearoff=0)
+        view_menu.add_command(label="Reset Zoom", command=lambda: self.set_zoom(1.0))
+        menu_bar.add_cascade(label="View", menu=view_menu)
         self.root_window.config(menu=menu_bar)
 
 
@@ -103,6 +123,7 @@ class ParameterManagerGUI:
             self.root_window.geometry(),
             list(self.tabs.keys()),
             self.file_states,
+            self.zoom,
         )
         self.switch_active_tab(None)
         # remove resize binding before destroying the window
@@ -112,7 +133,13 @@ class ParameterManagerGUI:
 
     def _open_file(self, file_path):
         tab_state = self.file_states.get(file_path)
-        tab = ParameterTab(self.notebook, file_path, initial_state=tab_state)
+        tab = ParameterTab(
+            self.notebook,
+            file_path,
+            initial_state=tab_state,
+            manager=self,
+            zoom=self.zoom,
+        )
         self.notebook.add(tab, text=os.path.basename(file_path))
         self.tabs[file_path] = tab
         self.notebook.select(tab)
@@ -132,4 +159,18 @@ class ParameterManagerGUI:
         """Delegate root <Configure> events to the active tab."""
         if self.current_tab and hasattr(self.current_tab, "on_resize"):
             self.current_tab.on_resize(event)
+
+    def set_zoom(self, value):
+        """Apply zoom level globally to all tabs."""
+        value = max(0.5, min(3.0, value))
+        if self.zoom == value:
+            return
+        self.zoom = value
+        for tab in self.tabs.values():
+            if hasattr(tab, "set_zoom"):
+                tab.set_zoom(value)
+        self.update_zoom_label()
+
+    def update_zoom_label(self):
+        self.zoom_label.config(text=f"Zoom: {int(self.zoom * 100)}%")
 

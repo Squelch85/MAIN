@@ -6,16 +6,17 @@ from collections import OrderedDict
 from config_io import compute_file_hash, load_parameters, save_parameters
 
 class ParameterTab(ttk.Frame):
-    def __init__(self, master, file_path, initial_state=None):
+    def __init__(self, master, file_path, initial_state=None, manager=None, zoom=1.0):
         super().__init__(master)
         self.file_path = file_path
+        self.manager = manager
         self.sections = OrderedDict()
         self.last_file_hash = None
         self.widget_registry = {}
         self.section_states = (initial_state or {}).get("collapsed", {})
         self._saved_order = (initial_state or {}).get("order")
         # 줌 배율과 기본 폰트/셀 크기 설정
-        self.zoom = 1.0
+        self.zoom = zoom
         self.base_cell_width = int(120 * 0.85)
         self.cell_width = self.base_cell_width
         self.base_header_font_size = 9
@@ -64,6 +65,7 @@ class ParameterTab(ttk.Frame):
         self._padding_initialized = False
         self._resize_bind_id = None
 
+        self.set_zoom(self.zoom)
         self.load_parameters()
 
     def update_layout_for_current_size(self):
@@ -268,6 +270,10 @@ class ParameterTab(ttk.Frame):
         self.button_font.config(size=int(self.base_param_font_size * self.zoom))
         self.update_layout_for_current_size()
 
+    def set_zoom(self, value):
+        self.zoom = value
+        self._apply_zoom()
+
     def _on_mousewheel(self, event):
         ctrl_pressed = bool(event.state & 0x4)
         if ctrl_pressed:
@@ -281,8 +287,11 @@ class ParameterTab(ttk.Frame):
                 delta = 0
             if delta:
                 step = 0.1 if delta > 0 else -0.1
-                self.zoom = max(0.5, min(3.0, self.zoom + step))
-                self._apply_zoom()
+                new_zoom = max(0.5, min(3.0, self.zoom + step))
+                if self.manager and hasattr(self.manager, "set_zoom"):
+                    self.manager.set_zoom(new_zoom)
+                else:
+                    self.set_zoom(new_zoom)
             return "break"
         if hasattr(event, "delta") and event.delta:
             self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
